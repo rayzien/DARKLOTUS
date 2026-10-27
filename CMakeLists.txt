@@ -40,7 +40,7 @@ add_executable(DarkLotus ${SOURCES})
 
 # Target libraries
 target_link_libraries(DarkLotus PRIVATE
-    raylib
+    ${CMAKE_CURRENT_SOURCE_DIR}/third_party/raylib/lib/libraylib.a
     m
     pthread
     dl

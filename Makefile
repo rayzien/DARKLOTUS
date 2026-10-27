@@ -1,6 +1,6 @@
 CXX ?= g++
 CXXFLAGS = -std=c++17 -Wall -Wextra -Wno-missing-field-initializers -O2 -Iinclude -Ithird_party/raylib/include
-LDFLAGS = -Lthird_party/raylib/lib -lraylib -lm -lpthread -ldl -lrt -lX11
+LDFLAGS = third_party/raylib/lib/libraylib.a -lm -lpthread -ldl -lrt -lX11
 
 SRCS = src/main.cpp \
        src/Core/GameManager.cpp \
