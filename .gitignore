@@ -1,0 +1,20 @@
+# Build outputs
+build/
+bin/
+*.o
+*.a
+*.so
+
+# Keep vendored raylib static lib
+!third_party/raylib/lib/libraylib.a
+!third_party/raylib/lib/libraylib.so*
+
+# IDE & Editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Blender autosaves
+*.blend1
+*.blend2
