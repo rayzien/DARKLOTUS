@@ -1,6 +1,6 @@
 """
 =============================================================================
-DARKLOTUS - OODIII JII Master 3D Character Generator (High Likeness v2)
+DARKLOTUS - OODIII JII Master 3D Character Generator (Ultra-Fidelity v3)
 =============================================================================
 Procedurally constructs the authentic 3D fighter model 'OODIII JII'
 matching the avatar idea sketch in ~/Downloads/odiiii jiii.png:
@@ -148,7 +148,7 @@ def build_head_mesh(col, mats):
     assign_mat_and_smooth(head_obj, mats['skin'])
     created_objs.append(head_obj)
 
-    # Cheeks / Jaw base to provide anatomical cheekbones and lower face support
+    # Cheeks / Jaw base
     bpy.ops.mesh.primitive_uv_sphere_add(segments=24, ring_count=16, radius=1.0, location=(0, -0.040, 1.590))
     jaw = bpy.context.active_object
     jaw.name = "Jaw_Base"
@@ -157,7 +157,7 @@ def build_head_mesh(col, mats):
     assign_mat_and_smooth(jaw, mats['skin'])
     created_objs.append(jaw)
 
-    # Ears: Left and Right (Prominent and clearly defined matching the sketch)
+    # Ears: Left and Right
     for side in [1.0, -1.0]:
         bpy.ops.mesh.primitive_torus_add(major_radius=0.026, minor_radius=0.007, location=(side * 0.122, -0.015, 1.675))
         ear = bpy.context.active_object
@@ -175,7 +175,7 @@ def build_head_mesh(col, mats):
         assign_mat_and_smooth(lobe, mats['skin'])
         created_objs.append(lobe)
 
-    # Neck (Clean cylindrical column)
+    # Neck
     bpy.ops.mesh.primitive_cylinder_add(vertices=24, radius=0.075, depth=0.16, location=(0, -0.015, 1.515))
     neck = bpy.context.active_object
     neck.name = "Neck"
@@ -216,7 +216,6 @@ def build_facial_features(col, mats):
     created_objs.append(bridge)
 
     # 2. Lips (Warm rose pink with gentle calm smile)
-    # Upper lip with Cupid's bow
     bpy.ops.mesh.primitive_uv_sphere_add(segments=16, ring_count=8, radius=0.011, location=(0, -0.132, 1.608))
     ulip = bpy.context.active_object
     ulip.name = "Upper_Lip"
@@ -225,7 +224,6 @@ def build_facial_features(col, mats):
     assign_mat_and_smooth(ulip, mats['lips'])
     created_objs.append(ulip)
 
-    # Lower lip
     bpy.ops.mesh.primitive_uv_sphere_add(segments=16, ring_count=8, radius=0.013, location=(0, -0.130, 1.595))
     llip = bpy.context.active_object
     llip.name = "Lower_Lip"
@@ -234,7 +232,7 @@ def build_facial_features(col, mats):
     assign_mat_and_smooth(llip, mats['lips'])
     created_objs.append(llip)
 
-    # 3. Eyes & Eyeballs: Positioned clearly to look through the glasses
+    # 3. Eyes & Eyeballs
     for side in [1.0, -1.0]:
         eye_x = side * 0.047
         eye_z = 1.692
@@ -264,22 +262,22 @@ def build_facial_features(col, mats):
         assign_mat_and_smooth(pupil, mats['pupil'])
         created_objs.append(pupil)
 
-        # Catchlight (Bright white glint matching cartoon sparkle)
+        # Catchlight (Bright white glint)
         bpy.ops.mesh.primitive_uv_sphere_add(segments=8, ring_count=6, radius=0.0030, location=(eye_x - side * 0.003, -0.1335, eye_z + 0.004))
         glint = bpy.context.active_object
         glint.name = f"Catchlight_{'L' if side > 0 else 'R'}"
         assign_mat_and_smooth(glint, mats['catchlight'])
         created_objs.append(glint)
 
-    # 4. Eyebrows: Jet-black, thick, strongly arched bands (as in sketch)
+    # 4. Eyebrows: Jet-black, thick, strongly arched bands
     for side in [1.0, -1.0]:
         bm = bmesh.new()
         pts = [
-            (side * 0.024, -0.130, 1.724, 0.0060),  # inner head
-            (side * 0.044, -0.126, 1.738, 0.0075),  # rising arch
-            (side * 0.064, -0.118, 1.745, 0.0078),  # peak arch
-            (side * 0.082, -0.106, 1.737, 0.0062),  # descending tail
-            (side * 0.096, -0.092, 1.722, 0.0038),  # sharp outer tip
+            (side * 0.024, -0.130, 1.724, 0.0060),
+            (side * 0.044, -0.126, 1.738, 0.0075),
+            (side * 0.064, -0.118, 1.745, 0.0078),
+            (side * 0.082, -0.106, 1.737, 0.0062),
+            (side * 0.096, -0.092, 1.722, 0.0038),
         ]
         prev_v_top, prev_v_bot = None, None
         for x, y, z, r in pts:
@@ -315,7 +313,6 @@ def build_facial_features(col, mats):
             sgn_s = 1.0 if st >= 0 else -1.0
             px = cx + rx * sgn_c * (abs(ct) ** 0.85)
             pz = cz + rz * sgn_s * (abs(st) ** 0.85)
-            # Y contour forward from face
             py = -0.138 + 0.006 * (px / 0.08) ** 2
 
             dir_x = (px - cx) / rx
@@ -343,7 +340,7 @@ def build_facial_features(col, mats):
         assign_mat_and_smooth(rim_obj, mats['glasses_frame'])
         created_objs.append(rim_obj)
 
-        # Temple arms (running back over ears)
+        # Temple arms
         bpy.ops.mesh.primitive_cylinder_add(vertices=8, radius=0.0022, depth=0.14, location=(side * 0.084, -0.065, 1.690))
         arm = bpy.context.active_object
         arm.name = f"Glasses_Temple_{'L' if side > 0 else 'R'}"
@@ -352,7 +349,7 @@ def build_facial_features(col, mats):
         assign_mat_and_smooth(arm, mats['glasses_frame'])
         created_objs.append(arm)
 
-    # Central nose bridge joining the two frames
+    # Central nose bridge
     bpy.ops.mesh.primitive_cylinder_add(vertices=12, radius=0.0028, depth=0.026, location=(0, -0.138, 1.696))
     bridge_obj = bpy.context.active_object
     bridge_obj.name = "Glasses_Bridge"
@@ -371,29 +368,36 @@ def build_hair_and_beard(col, mats):
     """
     created_objs = []
 
-    # 1. Iconic Forehead Hair Tuft / Crest (Curved smooth wave on top center of forehead)
+    # 1. Iconic Forehead Hair Tuft / Crest (Sculpted organic wave)
+    # Generates a soft, curved lock of hair centered on the forehead
     bm_tuft = bmesh.new()
-    for strand_i, (offset_x, tilt_y, length, width) in enumerate([
-        (0.000, 0.0, 0.060, 0.030),      # central main wave
-        (0.018, 16.0, 0.052, 0.022),     # right wave
-        (-0.018, -16.0, 0.052, 0.022),   # left wave
-        (0.032, 30.0, 0.040, 0.016),     # outer right
-        (-0.032, -30.0, 0.040, 0.016),   # outer left
-    ]):
-        base_pt = Vector((offset_x, -0.105, 1.770))
-        mid_pt = Vector((offset_x * 1.10, -0.116, 1.800))
-        tip_pt = Vector((offset_x * 1.25, -0.100, 1.815 + length * 0.2))
+    # 5 smooth cross sections creating a voluminous wave
+    cross_sections = [
+        # (center_y, center_z, radius_x, radius_z)
+        (-0.098, 1.765, 0.022, 0.012),
+        (-0.108, 1.782, 0.026, 0.016),
+        (-0.114, 1.798, 0.024, 0.018),
+        (-0.106, 1.815, 0.018, 0.014),
+        (-0.095, 1.825, 0.004, 0.004), # tapered tip
+    ]
+    prev_ring = None
+    for cy, cz, rx, rz in cross_sections:
+        curr_ring = []
+        n_ring = 12
+        for j in range(n_ring):
+            ang = 2.0 * math.pi * j / n_ring
+            vx = rx * math.cos(ang)
+            vz = cz + rz * math.sin(ang)
+            vy = cy + 0.003 * math.sin(ang)
+            curr_ring.append(bm_tuft.verts.new((vx, vy, vz)))
+        if prev_ring:
+            for j in range(n_ring):
+                nj = (j + 1) % n_ring
+                bm_tuft.faces.new((prev_ring[j], prev_ring[nj], curr_ring[nj], curr_ring[j]))
+        prev_ring = curr_ring
+    # Cap tip
+    bm_tuft.faces.new(curr_ring)
 
-        v0 = bm_tuft.verts.new(base_pt + Vector((-width * 0.5, 0, 0)))
-        v1 = bm_tuft.verts.new(base_pt + Vector((width * 0.5, 0, 0)))
-        v2 = bm_tuft.verts.new(mid_pt + Vector((width * 0.4, 0, 0)))
-        v3 = bm_tuft.verts.new(mid_pt + Vector((-width * 0.4, 0, 0)))
-        v4 = bm_tuft.verts.new(tip_pt)
-
-        bm_tuft.faces.new((v0, v1, v2, v3))
-        bm_tuft.faces.new((v3, v2, v4))
-
-    bmesh.ops.solidify(bm_tuft, geom=bm_tuft.faces[:], thickness=0.012)
     mesh_tuft = bpy.data.meshes.new("Hair_Tuft_Forehead")
     bm_tuft.to_mesh(mesh_tuft)
     bm_tuft.free()
@@ -513,12 +517,10 @@ def build_fur_collar(col, mats):
     num_tufts = 42
     for i in range(num_tufts):
         angle = 2.0 * math.pi * i / num_tufts
-        # Radii varying from 0.18m to 0.26m
         rx = 0.22 * math.cos(angle)
         ry = 0.18 * math.sin(angle) - 0.04
         rz = 1.450 - 0.045 * math.sin(angle)
 
-        # Fluff direction: pointing outward and downward
         dx = math.cos(angle)
         dy = math.sin(angle)
         dz = -0.32
@@ -614,7 +616,6 @@ def build_suit_jacket(col, mats):
 
     # Sleeves: UpperArm & Forearm tailored cylinders (L & R)
     for side in [1.0, -1.0]:
-        # UpperArm Sleeve
         p_sh = Vector((side * 0.23, 0.0, 1.47))
         p_el = Vector((side * 0.48, 0.02, 1.45))
         mid_up = (p_sh + p_el) * 0.5
@@ -984,7 +985,6 @@ def create_combat_animations(arm_obj):
     bpy.context.view_layer.objects.active = arm_obj
     arm_obj.select_set(True)
 
-    # Ensure all pose bones use Euler 'XYZ' for consistent rotation animation
     for pbone in arm_obj.pose.bones:
         pbone.rotation_mode = 'XYZ'
 
@@ -998,6 +998,25 @@ def create_combat_animations(arm_obj):
     head_pbone = arm_obj.pose.bones.get("Head")
     arm_l_pbone = arm_obj.pose.bones.get("UpperArm.L")
     arm_r_pbone = arm_obj.pose.bones.get("UpperArm.R")
+    fore_l = arm_obj.pose.bones.get("Forearm.L")
+    fore_r = arm_obj.pose.bones.get("Forearm.R")
+
+    # Guard stance keyframes
+    if arm_l_pbone and fore_l:
+        arm_l_pbone.rotation_euler = Euler((math.radians(35), math.radians(-10), math.radians(25)), 'XYZ')
+        fore_l.rotation_euler = Euler((math.radians(45), 0, math.radians(30)), 'XYZ')
+        arm_l_pbone.keyframe_insert(data_path="rotation_euler", frame=1)
+        fore_l.keyframe_insert(data_path="rotation_euler", frame=1)
+        arm_l_pbone.keyframe_insert(data_path="rotation_euler", frame=60)
+        fore_l.keyframe_insert(data_path="rotation_euler", frame=60)
+
+    if arm_r_pbone and fore_r:
+        arm_r_pbone.rotation_euler = Euler((math.radians(20), math.radians(10), math.radians(-25)), 'XYZ')
+        fore_r.rotation_euler = Euler((math.radians(50), 0, math.radians(-35)), 'XYZ')
+        arm_r_pbone.keyframe_insert(data_path="rotation_euler", frame=1)
+        fore_r.keyframe_insert(data_path="rotation_euler", frame=1)
+        arm_r_pbone.keyframe_insert(data_path="rotation_euler", frame=60)
+        fore_r.keyframe_insert(data_path="rotation_euler", frame=60)
 
     if chest_pbone:
         for f, (sc, rz) in [(1, (1.0, 0.0)), (30, (1.025, 0.015)), (60, (1.0, 0.0))]:
@@ -1015,34 +1034,41 @@ def create_combat_animations(arm_obj):
     action_jab = bpy.data.actions.new(name="1_JAB")
     arm_obj.animation_data.action = action_jab
 
-    forearm_l = arm_obj.pose.bones.get("Forearm.L")
-    if arm_l_pbone and forearm_l:
-        arm_l_pbone.rotation_euler = Euler((0, 0, 0), 'XYZ')
+    if arm_l_pbone and fore_l:
+        arm_l_pbone.rotation_euler = Euler((math.radians(35), math.radians(-10), math.radians(25)), 'XYZ')
         arm_l_pbone.keyframe_insert(data_path="rotation_euler", frame=1)
 
-        arm_l_pbone.rotation_euler = Euler((math.radians(45), 0, math.radians(20)), 'XYZ')
+        arm_l_pbone.rotation_euler = Euler((math.radians(80), 0, math.radians(10)), 'XYZ')
+        fore_l.rotation_euler = Euler((0, 0, 0), 'XYZ')
         arm_l_pbone.keyframe_insert(data_path="rotation_euler", frame=10)
+        fore_l.keyframe_insert(data_path="rotation_euler", frame=10)
 
-        arm_l_pbone.rotation_euler = Euler((0, 0, 0), 'XYZ')
+        arm_l_pbone.rotation_euler = Euler((math.radians(35), math.radians(-10), math.radians(25)), 'XYZ')
+        fore_l.rotation_euler = Euler((math.radians(45), 0, math.radians(30)), 'XYZ')
         arm_l_pbone.keyframe_insert(data_path="rotation_euler", frame=20)
+        fore_l.keyframe_insert(data_path="rotation_euler", frame=20)
 
     # 3. 2_CROSS (24 frames - Electric Wind God Fist)
     action_cross = bpy.data.actions.new(name="2_CROSS")
     arm_obj.animation_data.action = action_cross
-    if arm_r_pbone and spine_pbone:
-        arm_r_pbone.rotation_euler = Euler((0, 0, 0), 'XYZ')
+    if arm_r_pbone and spine_pbone and fore_r:
+        arm_r_pbone.rotation_euler = Euler((math.radians(20), 0, math.radians(-25)), 'XYZ')
         spine_pbone.rotation_euler = Euler((0, 0, 0), 'XYZ')
         arm_r_pbone.keyframe_insert(data_path="rotation_euler", frame=1)
         spine_pbone.keyframe_insert(data_path="rotation_euler", frame=1)
 
-        arm_r_pbone.rotation_euler = Euler((math.radians(65), 0, math.radians(-35)), 'XYZ')
-        spine_pbone.rotation_euler = Euler((0, 0, math.radians(-25)), 'XYZ')
+        arm_r_pbone.rotation_euler = Euler((math.radians(85), 0, math.radians(-20)), 'XYZ')
+        fore_r.rotation_euler = Euler((0, 0, 0), 'XYZ')
+        spine_pbone.rotation_euler = Euler((0, 0, math.radians(-30)), 'XYZ')
         arm_r_pbone.keyframe_insert(data_path="rotation_euler", frame=12)
+        fore_r.keyframe_insert(data_path="rotation_euler", frame=12)
         spine_pbone.keyframe_insert(data_path="rotation_euler", frame=12)
 
-        arm_r_pbone.rotation_euler = Euler((0, 0, 0), 'XYZ')
+        arm_r_pbone.rotation_euler = Euler((math.radians(20), 0, math.radians(-25)), 'XYZ')
+        fore_r.rotation_euler = Euler((math.radians(50), 0, math.radians(-35)), 'XYZ')
         spine_pbone.rotation_euler = Euler((0, 0, 0), 'XYZ')
         arm_r_pbone.keyframe_insert(data_path="rotation_euler", frame=24)
+        fore_r.keyframe_insert(data_path="rotation_euler", frame=24)
         spine_pbone.keyframe_insert(data_path="rotation_euler", frame=24)
 
     # 4. 3_MIDKICK (28 frames)
@@ -1060,8 +1086,9 @@ def create_combat_animations(arm_obj):
         thigh_r.rotation_euler = Euler((0, 0, 0), 'XYZ')
         thigh_r.keyframe_insert(data_path="rotation_euler", frame=28)
 
-    # 5. Set default back to IDLE
+    # Set default back to IDLE
     arm_obj.animation_data.action = action_idle
+    bpy.context.scene.frame_set(1)
     print("[ANIMATIONS] Combat animations (IDLE, 1_JAB, 2_CROSS, 3_MIDKICK) created successfully.")
 
 
