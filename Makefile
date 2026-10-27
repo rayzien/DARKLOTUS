@@ -20,7 +20,7 @@ SRCS = src/main.cpp \
 OBJS = $(SRCS:src/%.cpp=build/%.o)
 TARGET = bin/DarkLotus
 
-.PHONY: all clean run
+.PHONY: all clean run test
 
 all: $(TARGET)
 
@@ -30,6 +30,29 @@ $(TARGET): $(OBJS) | bin
 	@echo "  DARKLOTUS BUILD SUCCESSFUL!"
 	@echo "  Run with: ./bin/DarkLotus"
 	@echo "========================================"
+
+TEST_OBJS = build/tests/TestRunner.o \
+            build/Managers/CharacterManager.o \
+            build/Managers/CombatManager.o \
+            build/Managers/ButtonManager.o \
+            build/Managers/SettingsManager.o \
+            build/Managers/GraphicsManager.o \
+            build/Managers/SoundManager.o \
+            build/Entities/Fighter.o \
+            build/Utils/Logger.o
+
+TEST_TARGET = bin/DarkLotusTest
+
+test: $(TARGET) $(TEST_TARGET)
+	@echo "Running DarkLotus Test Suite..."
+	./$(TEST_TARGET)
+
+$(TEST_TARGET): $(TEST_OBJS) | bin
+	$(CXX) $(TEST_OBJS) $(LDFLAGS) -o $@
+
+build/tests/%.o: tests/%.cpp | build
+	@mkdir -p $(dir $@)
+	$(CXX) $(CXXFLAGS) -c $< -o $@
 
 build/%.o: src/%.cpp | build
 	@mkdir -p $(dir $@)

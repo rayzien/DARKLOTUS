@@ -96,8 +96,9 @@ void ButtonManager::ActivateFocusedButton() {
         auto it = m_buttons.find(id);
         if (it != m_buttons.end() && it->second.enabled) {
             m_lastClickedButton = id;
-            if (it->second.onClick) {
-                it->second.onClick();
+            auto cb = it->second.onClick;
+            if (cb) {
+                cb();
             }
         }
     }
@@ -107,6 +108,7 @@ void ButtonManager::Update(float deltaTime, int currentFrame) {
     m_lastClickedButton = "";
     Vector2 mousePos = ::GetMousePosition();
     bool mouseClicked = ::IsMouseButtonPressed(MOUSE_BUTTON_LEFT);
+    std::function<void()> pendingAction = nullptr;
 
     // ==========================================
     // GAMEPAD MENU NAVIGATION
@@ -151,15 +153,23 @@ void ButtonManager::Update(float deltaTime, int currentFrame) {
             }
         }
 
-        if (padConfirm) {
-            ActivateFocusedButton();
+        if (padConfirm && m_focusedButtonIdx >= 0 && m_focusedButtonIdx < static_cast<int>(m_buttonOrder.size())) {
+            const std::string& id = m_buttonOrder[m_focusedButtonIdx];
+            auto it = m_buttons.find(id);
+            if (it != m_buttons.end() && it->second.enabled) {
+                m_lastClickedButton = id;
+                pendingAction = it->second.onClick;
+            }
         }
     }
 
     // Update UI buttons hover / click
     for (size_t i = 0; i < m_buttonOrder.size(); ++i) {
         const auto& id = m_buttonOrder[i];
-        auto& btn = m_buttons[id];
+        auto it = m_buttons.find(id);
+        if (it == m_buttons.end()) continue;
+        auto& btn = it->second;
+
         if (!btn.enabled) {
             btn.state = ButtonVisualState::DISABLED;
             continue;
@@ -179,7 +189,7 @@ void ButtonManager::Update(float deltaTime, int currentFrame) {
             if (mouseClicked) {
                 m_lastClickedButton = id;
                 if (btn.onClick) {
-                    btn.onClick();
+                    pendingAction = btn.onClick;
                 }
             }
         } else if (isFocusedByPad) {
@@ -325,12 +335,19 @@ void ButtonManager::Update(float deltaTime, int currentFrame) {
         }
         m_inputHistory[p].push_back({m_currentInputs[p], currentFrame});
     }
+
+    // Safely execute pending button action AFTER loops and updates to prevent iterator invalidation
+    if (pendingAction) {
+        pendingAction();
+    }
 }
 
 void ButtonManager::DrawUI() {
     for (size_t i = 0; i < m_buttonOrder.size(); ++i) {
         const auto& id = m_buttonOrder[i];
-        const auto& btn = m_buttons[id];
+        auto it = m_buttons.find(id);
+        if (it == m_buttons.end()) continue;
+        const auto& btn = it->second;
         Color bgColor = btn.normalColor;
         Color borderColor = Color{80, 80, 90, 255};
 

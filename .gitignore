@@ -1,6 +1,7 @@
 # Build outputs
 build/
 bin/
+dist/
 *.o
 *.a
 *.so

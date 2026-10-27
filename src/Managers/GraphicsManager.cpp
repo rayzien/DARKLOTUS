@@ -139,6 +139,7 @@ void GraphicsManager::UpdateParticles(float deltaTime) {
 }
 
 void GraphicsManager::DrawParticles() {
+    ::rlSetBlendMode(BLEND_ADDITIVE);
     for (const auto& p : m_particles) {
         float alpha = p.lifeTime / p.maxLifeTime;
         Color c = p.color;
@@ -146,7 +147,9 @@ void GraphicsManager::DrawParticles() {
 
         // Draw glowing 3D diamond/cube spark
         ::DrawCube(p.position, p.size, p.size, p.size, c);
+        ::DrawCubeWires(p.position, p.size * 1.2f, p.size * 1.2f, p.size * 1.2f, Color{255, 255, 255, c.a});
     }
+    ::rlSetBlendMode(BLEND_ALPHA);
 }
 
 void GraphicsManager::BeginFrame() {

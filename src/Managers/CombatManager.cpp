@@ -163,9 +163,18 @@ void CombatManager::ResolveHit(Fighter* attacker, Fighter* defender, const Hitbo
         graphics->AddCameraTrauma(0.15f);
     }
 
-    // Tekken hit sparks
-    Color sparkCol = isCounterHit ? Color{250, 204, 21, 255} : Color{239, 68, 68, 255};
-    graphics->SpawnHitSparks(contactPoint, sparkCol, isCounterHit ? 35 : 20);
+    // Tekken elemental hit sparks tailored per character
+    Color sparkCol = Color{250, 204, 21, 255};
+    int charId = attacker->GetCharacterId();
+    if (charId == 0) sparkCol = Color{250, 204, 21, 255};      // Golden Lightning (Heihachi/Raiden)
+    else if (charId == 1) sparkCol = Color{34, 197, 94, 255};   // Emerald Chi (Leo Bajiquan)
+    else if (charId == 2) sparkCol = Color{239, 68, 68, 255};   // Crimson Flame Omen (Jin Kazama)
+    else if (charId == 3) sparkCol = Color{168, 85, 247, 255};  // Toxic Purple & Mach Sparks (Bryan/Kangaroo)
+
+    if (isCounterHit) {
+        sparkCol = Color{255, 248, 140, 255}; // Blinding electric white-gold Counter Hit
+    }
+    graphics->SpawnHitSparks(contactPoint, sparkCol, isCounterHit ? 42 : 24);
 
     m_recentEvents.push_back({
         atkIdx, defIdx, attack.moveName, finalDamage, isCounterHit, false, attack.isLauncher, contactPoint

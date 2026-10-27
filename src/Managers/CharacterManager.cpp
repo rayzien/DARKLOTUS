@@ -16,7 +16,7 @@ void CharacterManager::Init() {
         "Mishima Karate & Thunder God (Heihachi + Raiden)",
         "Electric Wind God Fist (EWGF), Demon Breath Palm, Hell Axle, and Raiden Lightning Torpedo Dive.",
         Color{234, 179, 8, 255}, // Thunder Gold
-        "assets/models/fighters/oodiii_jii.glb"
+        "assets/characters/oodiii_jii/model.glb"
     });
 
     // 2. LUHAR IHDNAG (Leo Kliesen / Bajiquan)
@@ -26,7 +26,7 @@ void CharacterManager::Init() {
         "Bajiquan Chinese Martial Arts (Leo Kliesen)",
         "Tetsuzanko Iron Body Shoulder Ram, Rising Elbow Launcher, Dragon Sweep, and Mountain Shatterer.",
         Color{34, 197, 94, 255}, // Jade Emerald
-        "assets/models/fighters/luhar_ihdnag.glb"
+        "assets/characters/luhar_ihdnag/model.glb"
     });
 
     // 3. WINPAK (Jin Kazama)
@@ -36,7 +36,7 @@ void CharacterManager::Init() {
         "Kazama Style Karate & Omen (Jin Kazama)",
         "Demon Paw lunging straight fist, Can-Can Double Launch Kicks, Thrusting Uppercut, and Divine Avenger.",
         Color{225, 29, 72, 255}, // Crimson Flame
-        "assets/models/fighters/winpak.glb"
+        "assets/characters/winpak/model.glb"
     });
 
     // 4. GANJA (Bryan Fury + Kangaroo)
@@ -46,7 +46,7 @@ void CharacterManager::Init() {
         "Brutal Kickboxing & Marsupial Brawler (Bryan Fury + Kangaroo)",
         "Nuclear Mach Punch wall splat, Jet Upper i14 launcher, Snake Edge low, and Kangaroo Dropkicks.",
         Color{168, 85, 247, 255}, // Toxic Purple
-        "assets/models/fighters/ganja.glb"
+        "assets/characters/ganja/model.glb"
     });
 
     // Default starting match: OODIII JII vs WINPAK

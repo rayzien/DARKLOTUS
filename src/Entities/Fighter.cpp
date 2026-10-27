@@ -944,13 +944,29 @@ void Fighter::DrawProcedural3DMannequin() {
     Vector3 pelvis = Vector3Add(root, Vector3{0.0f, 0.95f + breathe, 0.0f});
     ::DrawSphere(pelvis, 0.22f, jointColor);
 
-    // Character 3 (GANJA): Kangaroo tail on the back!
-    if (m_characterId == 3) {
+    // Belts & Sashes
+    if (m_characterId == 0) {
+        // OODIII JII: Gold Obi Belt with hanging knot
+        ::DrawCylinderEx(Vector3Add(pelvis, Vector3{0.0f, -0.06f, 0.0f}), Vector3Add(pelvis, Vector3{0.0f, 0.06f, 0.0f}), 0.24f, 0.24f, 8, Color{234, 179, 8, 255});
+        Vector3 knot = Vector3Add(pelvis, Vector3Add(Vector3Scale(fwd, 0.22f), Vector3Scale(rgt, 0.08f)));
+        ::DrawCube(Vector3Add(knot, Vector3{0.0f, -0.15f, 0.0f}), 0.06f, 0.25f, 0.04f, Color{234, 179, 8, 255});
+    } else if (m_characterId == 1) {
+        // LUHAR IHDNAG: Silver Kung-Fu Sash
+        ::DrawCylinderEx(Vector3Add(pelvis, Vector3{0.0f, -0.05f, 0.0f}), Vector3Add(pelvis, Vector3{0.0f, 0.05f, 0.0f}), 0.24f, 0.24f, 8, Color{220, 225, 235, 255});
+    } else if (m_characterId == 2) {
+        // WINPAK: Dark Devil Belt
+        ::DrawCylinderEx(Vector3Add(pelvis, Vector3{0.0f, -0.05f, 0.0f}), Vector3Add(pelvis, Vector3{0.0f, 0.05f, 0.0f}), 0.24f, 0.24f, 8, Color{20, 20, 25, 255});
+    } else if (m_characterId == 3) {
+        // GANJA: Tactical Skull Belt Buckle & Kangaroo tail
+        Vector3 buckle = Vector3Add(pelvis, Vector3Scale(fwd, 0.23f));
+        ::DrawCube(buckle, 0.10f, 0.08f, 0.04f, Color{210, 215, 220, 255});
+
+        // Articulated curved Kangaroo tail
         Vector3 tailBase = Vector3Add(pelvis, Vector3Scale(fwd, -0.18f));
-        Vector3 tailMid = Vector3Add(tailBase, Vector3Add(Vector3Scale(fwd, -0.40f), Vector3{0.0f, -0.25f, 0.0f}));
-        Vector3 tailTip = Vector3Add(tailMid, Vector3Add(Vector3Scale(fwd, -0.30f), Vector3{0.0f, 0.15f, 0.0f}));
-        ::DrawCylinderEx(tailBase, tailMid, 0.09f, 0.06f, 6, Color{130, 80, 50, 255});
-        ::DrawCylinderEx(tailMid, tailTip, 0.06f, 0.03f, 6, Color{130, 80, 50, 255});
+        Vector3 tailMid = Vector3Add(tailBase, Vector3Add(Vector3Scale(fwd, -0.42f), Vector3{0.0f, -0.28f, 0.0f}));
+        Vector3 tailTip = Vector3Add(tailMid, Vector3Add(Vector3Scale(fwd, -0.32f), Vector3{0.0f, 0.18f, 0.0f}));
+        ::DrawCylinderEx(tailBase, tailMid, 0.10f, 0.07f, 6, Color{130, 80, 50, 255});
+        ::DrawCylinderEx(tailMid, tailTip, 0.07f, 0.03f, 6, Color{130, 80, 50, 255});
     }
 
     // 2. Torso / Chest
@@ -981,6 +997,16 @@ void Fighter::DrawProcedural3DMannequin() {
         ::DrawCylinderEx(rHorn, rHornTip, 0.08f, 0.02f, 5, Color{240, 240, 240, 255});
     }
 
+    // Character 1 (LUHAR IHDNAG): Headband twin flowing ribbons
+    if (m_characterId == 1) {
+        Vector3 bandBase = Vector3Add(head, Vector3Add(Vector3Scale(fwd, -0.18f), Vector3{0.0f, 0.05f, 0.0f}));
+        float sway = std::sin(m_animTime * 6.0f) * 0.08f;
+        Vector3 ribbonEnd1 = Vector3Add(bandBase, Vector3Add(Vector3Scale(fwd, -0.35f + sway), Vector3{-0.06f, -0.25f, 0.0f}));
+        Vector3 ribbonEnd2 = Vector3Add(bandBase, Vector3Add(Vector3Scale(fwd, -0.32f - sway), Vector3{ 0.06f, -0.22f, 0.0f}));
+        ::DrawLine3D(bandBase, ribbonEnd1, Color{220, 38, 38, 255});
+        ::DrawLine3D(bandBase, ribbonEnd2, Color{220, 38, 38, 255});
+    }
+
     // Character 2 (WINPAK): Jin Kazama spiky fringe
     if (m_characterId == 2) {
         Vector3 fringe = Vector3Add(head, Vector3Add(Vector3Scale(fwd, 0.14f), Vector3{0.0f, 0.16f, 0.0f}));
@@ -1008,6 +1034,19 @@ void Fighter::DrawProcedural3DMannequin() {
     ::DrawCylinderEx(rShoulder, rFist, 0.08f, 0.07f, 6, jointColor);
     ::DrawSphere(rFist, (m_characterId == 3) ? 0.16f : 0.12f, gloveColor);
 
+    // Fist Elemental Auras
+    if (m_characterId == 0) {
+        // Golden lightning sparks around fists
+        float sparkOsc = std::sin(m_animTime * 15.0f) * 0.08f;
+        ::DrawCube(Vector3Add(lFist, Vector3{sparkOsc, 0.05f, 0.0f}), 0.05f, 0.05f, 0.05f, Color{250, 204, 21, 230});
+        ::DrawCube(Vector3Add(rFist, Vector3{-sparkOsc, 0.05f, 0.0f}), 0.05f, 0.05f, 0.05f, Color{250, 204, 21, 230});
+    } else if (m_characterId == 2) {
+        // Red devil omen sparks
+        float sparkOsc = std::cos(m_animTime * 14.0f) * 0.07f;
+        ::DrawCube(Vector3Add(lFist, Vector3{0.0f, sparkOsc, 0.0f}), 0.05f, 0.05f, 0.05f, Color{239, 68, 68, 230});
+        ::DrawCube(Vector3Add(rFist, Vector3{0.0f, -sparkOsc, 0.0f}), 0.05f, 0.05f, 0.05f, Color{239, 68, 68, 230});
+    }
+
     // 5. Legs & Feet
     Vector3 lHip = Vector3Add(pelvis, Vector3Scale(rgt, -0.16f));
     Vector3 rHip = Vector3Add(pelvis, Vector3Scale(rgt, 0.16f));
@@ -1021,8 +1060,17 @@ void Fighter::DrawProcedural3DMannequin() {
     ::DrawCylinderEx(rHip, rFoot, 0.10f, 0.08f, 6, jointColor);
     ::DrawCube(rFoot, 0.14f, 0.10f, 0.26f, skinColor);
 
-    // Shadow on arena floor
-    ::DrawCircle3D(Vector3{m_position.x, 0.02f, m_position.z}, 0.55f, Vector3{1.0f, 0.0f, 0.0f}, 90.0f, Color{0, 0, 0, 90});
+    // WINPAK: Crimson flame stripe on right leg
+    if (m_characterId == 2) {
+        Vector3 flameLeg = Vector3Lerp(rHip, rFoot, 0.5f);
+        ::DrawCube(flameLeg, 0.14f, 0.25f, 0.12f, Color{225, 29, 72, 240});
+    }
+
+    // Dynamic Altitude-Scaled Soft Shadow
+    float groundDist = std::max(0.0f, m_position.y);
+    float shadowScale = std::clamp(1.0f - (groundDist * 0.12f), 0.35f, 1.0f);
+    unsigned char shadowAlpha = static_cast<unsigned char>(std::clamp(120.0f - (groundDist * 25.0f), 25.0f, 120.0f));
+    ::DrawCircle3D(Vector3{m_position.x, 0.02f, m_position.z}, 0.58f * shadowScale, Vector3{1.0f, 0.0f, 0.0f}, 90.0f, Color{0, 0, 0, shadowAlpha});
 }
 
 void Fighter::Draw3D(bool showHitboxes) {
