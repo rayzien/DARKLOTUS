@@ -299,7 +299,8 @@ void GameManager::SetupPauseButtons() {
 }
 
 void GameManager::UpdateFight(float deltaTime) {
-    if (::IsKeyPressed(KEY_ESCAPE)) {
+    if (::IsKeyPressed(KEY_ESCAPE) || m_buttonManager->WasGamepadButtonPressed(0, GAMEPAD_BUTTON_MIDDLE_RIGHT)) {
+        m_soundManager->PlaySFX(SoundEffectType::MENU_CLICK);
         SetState(GameState::PAUSED);
         return;
     }
@@ -357,7 +358,7 @@ void GameManager::UpdateFight(float deltaTime) {
         }
 
         // Combat Collision resolution
-        m_combatManager->Update(p1, p2, m_graphicsManager.get(), m_soundManager.get(), m_currentFrame);
+        m_combatManager->Update(p1, p2, m_graphicsManager.get(), m_soundManager.get(), m_buttonManager.get(), m_currentFrame);
 
         // Check recent combat events for popups
         for (const auto& ev : m_combatManager->GetRecentEvents()) {
@@ -424,6 +425,17 @@ void GameManager::Update(float deltaTime) {
         case GameState::MAIN_MENU:
             break;
         case GameState::CHARACTER_SELECT:
+            if (!m_p1Locked) {
+                if (m_buttonManager->WasGamepadButtonPressed(0, GAMEPAD_BUTTON_LEFT_FACE_LEFT) ||
+                    ::IsKeyPressed(KEY_LEFT) || ::IsKeyPressed(KEY_A)) {
+                    m_p1SelectedChar = (m_p1SelectedChar + 3) % 4;
+                    m_soundManager->PlaySFX(SoundEffectType::MENU_CLICK);
+                } else if (m_buttonManager->WasGamepadButtonPressed(0, GAMEPAD_BUTTON_LEFT_FACE_RIGHT) ||
+                           ::IsKeyPressed(KEY_RIGHT) || ::IsKeyPressed(KEY_D)) {
+                    m_p1SelectedChar = (m_p1SelectedChar + 1) % 4;
+                    m_soundManager->PlaySFX(SoundEffectType::MENU_CLICK);
+                }
+            }
             break;
         case GameState::SETTINGS_MENU:
             break;
@@ -434,6 +446,12 @@ void GameManager::Update(float deltaTime) {
             UpdateRoundOver(scaledDelta);
             break;
         case GameState::PAUSED:
+            if (m_buttonManager->WasGamepadButtonPressed(0, GAMEPAD_BUTTON_MIDDLE_RIGHT) ||
+                m_buttonManager->WasGamepadButtonPressed(0, GAMEPAD_BUTTON_RIGHT_FACE_RIGHT)) {
+                m_soundManager->PlaySFX(SoundEffectType::MENU_CLICK);
+                m_currentState = GameState::FIGHT_ACTIVE;
+                m_buttonManager->ClearButtons();
+            }
             break;
         default:
             break;

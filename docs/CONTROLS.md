@@ -86,7 +86,39 @@ DarkLotus uses the authentic Tekken 4-button fighting scheme:
 
 ---
 
-## 3. Keyboard & Gamepad Default Bindings
+## 3. Gamepad / Controller Layout (Full Native Support)
+
+Plug in any Xbox, PlayStation (DualShock / DualSense), Switch Pro, or generic USB/Bluetooth gamepad. DarkLotus automatically detects and configures it!
+
+### Combat Controls (Xbox / PlayStation)
+
+| Action | Xbox Controller | PlayStation Controller | Notes |
+|---|---|---|---|
+| **Sidestep Up (Z-)** | D-Pad Up / Left Stick Up | D-Pad Up / Left Stick Up | 3D lateral evasion |
+| **Sidestep Down (Z+) / Crouch** | D-Pad Down / Left Stick Down | D-Pad Down / Left Stick Down | Ducking under highs |
+| **Retreat / Guard** | D-Pad Left / Left Stick Left | D-Pad Left / Left Stick Left | High / Mid block |
+| **Advance / Dash** | D-Pad Right / Left Stick Right | D-Pad Right / Left Stick Right | Forward approach |
+| **1: Left Punch (LP)** | `X` Button | `Square` Button | Fast $i10$ jab |
+| **2: Right Punch (RP)** | `Y` Button | `Triangle` Button | Mid straight punch |
+| **3: Left Kick (LK)** | `A` Button | `Cross` Button | Mid front kick / low check |
+| **4: Right Kick (RK)** | `B` Button | `Circle` Button | Roundhouse / axe kick |
+| **1 + 2 (Dual Punch)** | `RB` (Right Bumper) | `R1` | Demon Breath / Mach Punch / Tetsuzanko / Demon Paw |
+| **3 + 4 (Dual Kick)** | `RT` (Right Trigger) | `R2` | Torpedo Dive / Kangaroo Dropkick / Can-Can Kicks |
+| **Rage Art / Heat Burst** | `LB` / Right Stick Click (`R3`) | `L1` / `R3` | Low HP cinematic super strike |
+| **Throw (1+3 / 2+4)** | `LT` (Left Trigger) | `L2` | Close-range unblockable throw |
+| **Pause / Resume** | `Start` / `Menu` Button | `Options` Button | Pauses battle and opens menu |
+
+### Menu & Character Select Controller Navigation
+
+- **D-Pad Up / Down** (or Left Stick): Navigate menu items smoothly.
+- **D-Pad Left / Right**: Select between the 4 fighters on the Character Select Screen.
+- **`A` Button (`Cross`)**: Confirm / Lock In selection.
+- **`B` Button (`Circle`)**: Cancel / Unlock selection / Back to previous menu.
+- **Haptic Rumble**: Real-time dual-motor vibration feedback on hits, Counter Hits, Wall Splats, and Rage Arts!
+
+---
+
+## 4. Keyboard Default Bindings
 
 ### Player 1 (Keyboard)
 - **Sidestep Up**: `W`

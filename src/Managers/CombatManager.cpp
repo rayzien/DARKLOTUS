@@ -1,6 +1,7 @@
 #include "DarkLotus/Managers/CombatManager.hpp"
 #include "DarkLotus/Managers/GraphicsManager.hpp"
 #include "DarkLotus/Managers/SoundManager.hpp"
+#include "DarkLotus/Managers/ButtonManager.hpp"
 #include "DarkLotus/Utils/Logger.hpp"
 
 namespace DarkLotus {
@@ -49,7 +50,7 @@ bool CombatManager::CheckCollision3D(const Hitbox3D& hitbox, const Vector3& atta
 }
 
 void CombatManager::ResolveHit(Fighter* attacker, Fighter* defender, const Hitbox3D& attack,
-                              const Vector3& contactPoint, GraphicsManager* graphics, SoundManager* sounds) {
+                              const Vector3& contactPoint, GraphicsManager* graphics, SoundManager* sounds, ButtonManager* buttons) {
     int atkIdx = attacker->GetPlayerIndex();
     int defIdx = defender->GetPlayerIndex();
 
@@ -90,6 +91,11 @@ void CombatManager::ResolveHit(Fighter* attacker, Fighter* defender, const Hitbo
         graphics->SpawnHitSparks(contactPoint, Color{220, 220, 255, 255}, 12); // Blue/white spark
         graphics->AddCameraTrauma(0.10f);
 
+        if (buttons) {
+            buttons->TriggerVibration(atkIdx, 0.15f, 0.15f, 0.08f);
+            buttons->TriggerVibration(defIdx, 0.20f, 0.20f, 0.10f);
+        }
+
         // Reset attacker combo
         m_comboCount[atkIdx] = 0;
         m_comboDamage[atkIdx] = 0;
@@ -123,6 +129,23 @@ void CombatManager::ResolveHit(Fighter* attacker, Fighter* defender, const Hitbo
     m_comboDamage[atkIdx] += finalDamage;
     m_comboResetTimer[atkIdx] = 70; // 70 frames to drop combo
 
+    // Controller Rumble / Haptic Feedback
+    if (buttons) {
+        if (isKO) {
+            buttons->TriggerVibration(atkIdx, 1.0f, 1.0f, 0.50f);
+            buttons->TriggerVibration(defIdx, 1.0f, 1.0f, 0.50f);
+        } else if (isCounterHit) {
+            buttons->TriggerVibration(atkIdx, 0.80f, 0.80f, 0.25f);
+            buttons->TriggerVibration(defIdx, 0.85f, 0.85f, 0.28f);
+        } else if (attack.isLauncher || attack.damage >= 1200) {
+            buttons->TriggerVibration(atkIdx, 0.55f, 0.55f, 0.18f);
+            buttons->TriggerVibration(defIdx, 0.60f, 0.60f, 0.20f);
+        } else {
+            buttons->TriggerVibration(atkIdx, 0.25f, 0.25f, 0.10f);
+            buttons->TriggerVibration(defIdx, 0.35f, 0.35f, 0.12f);
+        }
+    }
+
     // Visuals & Sound FX
     if (isKO) {
         sounds->PlaySFX(SoundEffectType::KO_CRASH);
@@ -149,7 +172,7 @@ void CombatManager::ResolveHit(Fighter* attacker, Fighter* defender, const Hitbo
     });
 }
 
-void CombatManager::Update(Fighter* p1, Fighter* p2, GraphicsManager* graphics, SoundManager* sounds, int /*currentFrame*/) {
+void CombatManager::Update(Fighter* p1, Fighter* p2, GraphicsManager* graphics, SoundManager* sounds, ButtonManager* buttons, int /*currentFrame*/) {
     if (!p1 || !p2 || !graphics || !sounds) return;
 
     // Decay combo reset timers
@@ -168,7 +191,7 @@ void CombatManager::Update(Fighter* p1, Fighter* p2, GraphicsManager* graphics, 
     if (p1Atk) {
         Vector3 contactPoint;
         if (CheckCollision3D(*p1Atk, p1->GetPosition(), p1->GetYaw(), p2, &contactPoint)) {
-            ResolveHit(p1, p2, *p1Atk, contactPoint, graphics, sounds);
+            ResolveHit(p1, p2, *p1Atk, contactPoint, graphics, sounds, buttons);
         }
     }
 
@@ -177,7 +200,7 @@ void CombatManager::Update(Fighter* p1, Fighter* p2, GraphicsManager* graphics, 
     if (p2Atk) {
         Vector3 contactPoint;
         if (CheckCollision3D(*p2Atk, p2->GetPosition(), p2->GetYaw(), p1, &contactPoint)) {
-            ResolveHit(p2, p1, *p2Atk, contactPoint, graphics, sounds);
+            ResolveHit(p2, p1, *p2Atk, contactPoint, graphics, sounds, buttons);
         }
     }
 }

@@ -8,6 +8,7 @@ namespace DarkLotus {
 
 class GraphicsManager;
 class SoundManager;
+class ButtonManager;
 
 struct CombatEvent {
     int attackerIndex;
@@ -26,7 +27,7 @@ public:
     ~CombatManager();
 
     void Init();
-    void Update(Fighter* p1, Fighter* p2, GraphicsManager* graphics, SoundManager* sounds, int currentFrame);
+    void Update(Fighter* p1, Fighter* p2, GraphicsManager* graphics, SoundManager* sounds, ButtonManager* buttons, int currentFrame);
 
     const std::vector<CombatEvent>& GetRecentEvents() const { return m_recentEvents; }
     void ClearEvents() { m_recentEvents.clear(); }
@@ -38,7 +39,7 @@ private:
     bool CheckCollision3D(const Hitbox3D& hitbox, const Vector3& attackerPos, float attackerYaw,
                           const Fighter* defender, Vector3* outContactPoint);
     void ResolveHit(Fighter* attacker, Fighter* defender, const Hitbox3D& attack,
-                    const Vector3& contactPoint, GraphicsManager* graphics, SoundManager* sounds);
+                    const Vector3& contactPoint, GraphicsManager* graphics, SoundManager* sounds, ButtonManager* buttons);
 
 private:
     std::vector<CombatEvent> m_recentEvents;

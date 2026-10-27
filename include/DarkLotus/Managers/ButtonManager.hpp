@@ -51,13 +51,36 @@ public:
     // Input buffer for combo execution
     bool CheckInputSequence(int playerIndex, const std::vector<unsigned int>& sequence, int windowFrames, int currentFrame) const;
 
+    // Gamepad detection and query
+    bool IsGamepadConnected(int playerIndex = 0) const;
+    std::string GetGamepadDeviceName(int playerIndex = 0) const;
+    void TriggerVibration(int playerIndex, float leftMotor, float rightMotor, float duration);
+
+    // Controller Navigation
+    bool WasGamepadButtonPressed(int playerIndex, int gamepadButton) const;
+    bool WasGamepadButtonReleased(int playerIndex, int gamepadButton) const;
+    float GetGamepadAxis(int playerIndex, int axis) const;
+
+    // Menu Focus Navigation
+    void SetFocusedButtonIndex(int index) { m_focusedButtonIdx = index; }
+    int GetFocusedButtonIndex() const { return m_focusedButtonIdx; }
+    int GetButtonCount() const { return static_cast<int>(m_buttonOrder.size()); }
+    void NavigateFocusNext();
+    void NavigateFocusPrev();
+    void ActivateFocusedButton();
+
 private:
     std::unordered_map<std::string, UIButton> m_buttons;
+    std::vector<std::string> m_buttonOrder;
+    int m_focusedButtonIdx{-1};
     std::string m_lastClickedButton;
 
     // Input bitmasks for P1 and P2
     unsigned int m_currentInputs[2]{0, 0};
     unsigned int m_previousInputs[2]{0, 0};
+
+    // Controller navigation cooldown timer
+    float m_navCooldown{0.0f};
 
     // Circular input history buffer (60 frames)
     static constexpr size_t BUFFER_SIZE = 60;
