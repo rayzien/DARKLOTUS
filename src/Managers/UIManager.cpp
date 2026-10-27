@@ -196,37 +196,113 @@ void UIManager::DrawMainMenu(ButtonManager* btnMgr) {
     btnMgr->DrawUI();
 }
 
+struct CharDisplayData {
+    const char* name;
+    const char* style;
+    const char* launcher;
+    const char* wallSplat;
+    const char* lowMove;
+    const char* special;
+    const char* rageArt;
+    Color primaryColor;
+};
+
+static const CharDisplayData s_charData[] = {
+    {
+        "OODIII JII",
+        "Mishima Karate & Thunder God (Heihachi + Raiden)",
+        "Electric Wind God Fist (d+2)",
+        "Demon Breath Palm (1+2)",
+        "Hell Sweep (d+3)",
+        "Raiden Torpedo Dive (3+4)",
+        "RAGE ART: Thunder Wrath",
+        Color{234, 179, 8, 255} // Thunder Gold
+    },
+    {
+        "LUHAR IHDNAG",
+        "Bajiquan Chinese Martial Arts (Leo Kliesen)",
+        "Baji Rising Elbow (d+2)",
+        "Tetsuzanko Shoulder Ram (1+2)",
+        "Dragon Low Sweep (d+3)",
+        "Dual Crane Palms (3+4)",
+        "RAGE ART: Mountain Shatterer",
+        Color{34, 197, 94, 255} // Jade Emerald
+    },
+    {
+        "WINPAK",
+        "Kazama Style Karate & Omen (Jin Kazama)",
+        "Thrusting Demon Uppercut (d+2)",
+        "Demon Paw Lunging Fist (1+2)",
+        "Kazama Low Sweep (d+3)",
+        "Can-Can Double Kicks (3+4)",
+        "RAGE ART: Divine Avenger",
+        Color{225, 29, 72, 255} // Crimson Flame
+    },
+    {
+        "GANJA",
+        "Brutal Kickboxing & Marsupial (Bryan + Kangaroo)",
+        "Jet Upper i14 Launcher (d+2)",
+        "Nuclear Mach Punch (1+2)",
+        "Snake Edge Low Launcher (d+3)",
+        "Kangaroo Flying Dropkick (3+4)",
+        "RAGE ART: Fury Chaos Barrage",
+        Color{168, 85, 247, 255} // Toxic Purple
+    }
+};
+
 void UIManager::DrawCharacterSelect(ButtonManager* btnMgr, int p1Selected, int p2Selected, bool p1Locked, bool p2Locked) {
     float sw = static_cast<float>(::GetScreenWidth());
     float sh = static_cast<float>(::GetScreenHeight());
 
-    int titleSize = 40;
+    int titleSize = 38;
     int titleW = ::MeasureText("SELECT YOUR FIGHTER", titleSize);
-    ::DrawText("SELECT YOUR FIGHTER", static_cast<int>(sw * 0.5f - titleW * 0.5f), 40, titleSize, Color{245, 245, 245, 255});
+    ::DrawText("SELECT YOUR FIGHTER", static_cast<int>(sw * 0.5f - titleW * 0.5f), 30, titleSize, Color{245, 245, 245, 255});
 
-    const char* rosterNames[] = {"LOTUS (Mishima Karate)", "KAGE (Shadow Ninjutsu)", "RAIJIN (Thunder Brawler)"};
-    const char* p1Name = (p1Selected >= 0 && p1Selected < 3) ? rosterNames[p1Selected] : "SELECTING...";
-    const char* p2Name = (p2Selected >= 0 && p2Selected < 3) ? rosterNames[p2Selected] : "SELECTING...";
+    auto drawCard = [&](float cardX, float cardY, float cardW, float cardH, int charIdx, bool isLocked, const char* playerLabel, Color headerColor) {
+        if (charIdx < 0 || charIdx >= 4) return;
+        const auto& d = s_charData[charIdx];
 
-    // P1 side card
-    Rectangle p1Card = {sw * 0.10f, sh * 0.25f, sw * 0.35f, sh * 0.50f};
-    ::DrawRectangleRec(p1Card, Color{25, 28, 38, 240});
-    ::DrawRectangleLinesEx(p1Card, p1Locked ? 4.0f : 2.0f, p1Locked ? Color{34, 197, 94, 255} : Color{220, 38, 38, 255});
-    ::DrawText("PLAYER 1", static_cast<int>(p1Card.x + 20), static_cast<int>(p1Card.y + 20), 24, Color{220, 38, 38, 255});
-    ::DrawText(p1Name, static_cast<int>(p1Card.x + 20), static_cast<int>(p1Card.y + 70), 20, Color{240, 240, 240, 255});
-    if (p1Locked) {
-        ::DrawText("[READY]", static_cast<int>(p1Card.x + p1Card.width - 120), static_cast<int>(p1Card.y + 20), 22, Color{34, 197, 94, 255});
-    }
+        Rectangle card = {cardX, cardY, cardW, cardH};
+        ::DrawRectangleRec(card, Color{20, 22, 32, 245});
+        ::DrawRectangleLinesEx(card, isLocked ? 4.0f : 2.0f, isLocked ? Color{34, 197, 94, 255} : d.primaryColor);
 
-    // P2 side card
-    Rectangle p2Card = {sw * 0.55f, sh * 0.25f, sw * 0.35f, sh * 0.50f};
-    ::DrawRectangleRec(p2Card, Color{25, 28, 38, 240});
-    ::DrawRectangleLinesEx(p2Card, p2Locked ? 4.0f : 2.0f, p2Locked ? Color{34, 197, 94, 255} : Color{59, 130, 246, 255});
-    ::DrawText("PLAYER 2 / CPU", static_cast<int>(p2Card.x + 20), static_cast<int>(p2Card.y + 20), 24, Color{59, 130, 246, 255});
-    ::DrawText(p2Name, static_cast<int>(p2Card.x + 20), static_cast<int>(p2Card.y + 70), 20, Color{240, 240, 240, 255});
-    if (p2Locked) {
-        ::DrawText("[READY]", static_cast<int>(p2Card.x + p2Card.width - 120), static_cast<int>(p2Card.y + 20), 22, Color{34, 197, 94, 255});
-    }
+        // Header
+        ::DrawText(playerLabel, static_cast<int>(cardX + 16), static_cast<int>(cardY + 14), 22, headerColor);
+        if (isLocked) {
+            ::DrawText("[LOCKED IN]", static_cast<int>(cardX + cardW - 130), static_cast<int>(cardY + 14), 20, Color{34, 197, 94, 255});
+        }
+
+        // Character Name
+        ::DrawText(d.name, static_cast<int>(cardX + 16), static_cast<int>(cardY + 48), 28, d.primaryColor);
+
+        // Fighting Style
+        ::DrawText(d.style, static_cast<int>(cardX + 16), static_cast<int>(cardY + 84), 16, Color{190, 200, 215, 255});
+
+        // Moveset List
+        float listY = cardY + 120.0f;
+        ::DrawText("SIGNATURE MOVES:", static_cast<int>(cardX + 16), static_cast<int>(listY), 16, Color{250, 204, 21, 255});
+        listY += 24.0f;
+
+        ::DrawText(TextFormat("• Launcher: %s", d.launcher), static_cast<int>(cardX + 16), static_cast<int>(listY), 15, Color{230, 230, 230, 255});
+        listY += 22.0f;
+        ::DrawText(TextFormat("• Wall Splat: %s", d.wallSplat), static_cast<int>(cardX + 16), static_cast<int>(listY), 15, Color{230, 230, 230, 255});
+        listY += 22.0f;
+        ::DrawText(TextFormat("• Low Attack: %s", d.lowMove), static_cast<int>(cardX + 16), static_cast<int>(listY), 15, Color{230, 230, 230, 255});
+        listY += 22.0f;
+        ::DrawText(TextFormat("• Special: %s", d.special), static_cast<int>(cardX + 16), static_cast<int>(listY), 15, Color{230, 230, 230, 255});
+        listY += 22.0f;
+        ::DrawText(TextFormat("• Super: %s", d.rageArt), static_cast<int>(cardX + 16), static_cast<int>(listY), 15, Color{239, 68, 68, 255});
+    };
+
+    float cardW = sw * 0.42f;
+    float cardH = sh * 0.44f;
+    float cardY = sh * 0.16f;
+
+    // Draw P1 Card (Left)
+    drawCard(sw * 0.06f, cardY, cardW, cardH, p1Selected, p1Locked, "PLAYER 1", Color{220, 38, 38, 255});
+
+    // Draw P2 / CPU Card (Right)
+    drawCard(sw * 0.52f, cardY, cardW, cardH, p2Selected, p2Locked, "PLAYER 2 / CPU", Color{59, 130, 246, 255});
 
     btnMgr->DrawUI();
 }

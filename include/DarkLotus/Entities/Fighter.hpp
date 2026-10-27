@@ -9,7 +9,7 @@ class AnimationManager;
 
 class Fighter {
 public:
-    Fighter(int playerIndex, const std::string& name, Color themeColor, Vector3 startPos);
+    Fighter(int playerIndex, int characterId, const std::string& name, Color themeColor, Vector3 startPos);
     ~Fighter();
 
     void Init();
@@ -24,6 +24,7 @@ public:
 
     // Getters
     int GetPlayerIndex() const { return m_playerIndex; }
+    int GetCharacterId() const { return m_characterId; }
     const std::string& GetName() const { return m_name; }
     Vector3 GetPosition() const { return m_position; }
     Vector3 GetVelocity() const { return m_velocity; }
@@ -63,6 +64,7 @@ private:
 
 private:
     int m_playerIndex;
+    int m_characterId{0};
     std::string m_name;
     Color m_themeColor;
     bool m_isAI{false};

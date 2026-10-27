@@ -156,9 +156,10 @@ void GameManager::SetupCharSelectButtons() {
     float sh = static_cast<float>(::GetScreenHeight());
 
     const auto& roster = m_characterManager->GetRoster();
-    float slotW = 140.0f;
-    float slotH = 45.0f;
-    float totalW = roster.size() * (slotW + 20.0f);
+    float slotW = 210.0f;
+    float slotH = 50.0f;
+    float spacing = 16.0f;
+    float totalW = roster.size() * slotW + (roster.size() - 1) * spacing;
     float startX = (sw - totalW) * 0.5f;
 
     for (size_t i = 0; i < roster.size(); ++i) {
@@ -167,16 +168,17 @@ void GameManager::SetupCharSelectButtons() {
 
         m_buttonManager->RegisterButton({
             "char_btn_" + std::to_string(charId), label,
-            Rectangle{startX + (i * (slotW + 20.0f)), sh * 0.80f, slotW, slotH},
+            Rectangle{startX + (i * (slotW + spacing)), sh * 0.74f, slotW, slotH},
             ButtonVisualState::NORMAL,
-            Color{40, 44, 55, 230}, roster[i].primaryColor, Color{245, 245, 245, 255},
+            Color{35, 38, 50, 240}, roster[i].primaryColor, Color{245, 245, 245, 255},
             [this, charId]() {
                 m_soundManager->PlaySFX(SoundEffectType::MENU_CLICK);
                 if (!m_p1Locked) {
                     m_p1SelectedChar = charId;
                     m_p1Locked = true;
                     if (m_vsAI) {
-                        m_p2SelectedChar = (charId == 0) ? 1 : 0;
+                        // Pick opponent
+                        m_p2SelectedChar = (charId + 1) % 4;
                         m_p2Locked = true;
                     }
                 } else if (!m_p2Locked) {
@@ -185,12 +187,25 @@ void GameManager::SetupCharSelectButtons() {
                 }
 
                 if (m_p1Locked && m_p2Locked) {
+                    m_soundManager->PlaySFX(SoundEffectType::MENU_SELECT);
                     m_characterManager->SetupMatch(m_p1SelectedChar, m_p2SelectedChar, m_vsAI);
                     SetState(GameState::FIGHT_INTRO);
                 }
             }
         });
     }
+
+    m_buttonManager->RegisterButton({
+        "btn_reset_selection", "RESET SELECTION",
+        Rectangle{sw * 0.5f - 110.0f, sh * 0.83f, 220.0f, 38.0f},
+        ButtonVisualState::NORMAL,
+        Color{30, 32, 42, 230}, Color{234, 179, 8, 255}, Color{220, 220, 220, 255},
+        [this]() {
+            m_p1Locked = false;
+            m_p2Locked = false;
+            m_soundManager->PlaySFX(SoundEffectType::MENU_CLICK);
+        }
+    });
 
     m_buttonManager->RegisterButton({
         "btn_back_menu", "BACK TO MENU",

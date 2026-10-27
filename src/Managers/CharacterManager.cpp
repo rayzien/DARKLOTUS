@@ -9,37 +9,50 @@ CharacterManager::~CharacterManager() = default;
 void CharacterManager::Init() {
     m_roster.clear();
 
+    // 1. OODIII JII (Heihachi Mishima + Raiden)
     m_roster.push_back({
         0,
-        "LOTUS",
-        "Mishima Karate / Dark Lotus",
-        "Master of explosive strikes, electric wind god fist, and devastating juggle combos.",
-        Color{220, 38, 38, 255}, // Crimson Red
-        "assets/models/fighters/lotus.glb"
+        "OODIII JII",
+        "Mishima Karate & Thunder God (Heihachi + Raiden)",
+        "Electric Wind God Fist (EWGF), Demon Breath Palm, Hell Axle, and Raiden Lightning Torpedo Dive.",
+        Color{234, 179, 8, 255}, // Thunder Gold
+        "assets/models/fighters/oodiii_jii.glb"
     });
 
+    // 2. LUHAR IHDNAG (Leo Kliesen / Bajiquan)
     m_roster.push_back({
         1,
-        "KAGE",
-        "Shadow Ninjutsu",
-        "Lightning fast evasive sidestepper, high/low mixup specialist with lethal sweeps.",
-        Color{59, 130, 246, 255}, // Cobalt Blue
-        "assets/models/fighters/kage.glb"
+        "LUHAR IHDNAG",
+        "Bajiquan Chinese Martial Arts (Leo Kliesen)",
+        "Tetsuzanko Iron Body Shoulder Ram, Rising Elbow Launcher, Dragon Sweep, and Mountain Shatterer.",
+        Color{34, 197, 94, 255}, // Jade Emerald
+        "assets/models/fighters/luhar_ihdnag.glb"
     });
 
+    // 3. WINPAK (Jin Kazama)
     m_roster.push_back({
         2,
-        "RAIJIN",
-        "Thunder Brawler",
-        "Armored power crushes, wall carry juggles, and ferocious counter hit setups.",
-        Color{168, 85, 247, 255}, // Raijin Purple
-        "assets/models/fighters/raijin.glb"
+        "WINPAK",
+        "Kazama Style Karate & Omen (Jin Kazama)",
+        "Demon Paw lunging straight fist, Can-Can Double Launch Kicks, Thrusting Uppercut, and Divine Avenger.",
+        Color{225, 29, 72, 255}, // Crimson Flame
+        "assets/models/fighters/winpak.glb"
     });
 
-    // Default match setup: Lotus (P1) vs Kage (P2 CPU)
-    SetupMatch(0, 1, true);
+    // 4. GANJA (Bryan Fury + Kangaroo)
+    m_roster.push_back({
+        3,
+        "GANJA",
+        "Brutal Kickboxing & Marsupial Brawler (Bryan Fury + Kangaroo)",
+        "Nuclear Mach Punch wall splat, Jet Upper i14 launcher, Snake Edge low, and Kangaroo Dropkicks.",
+        Color{168, 85, 247, 255}, // Toxic Purple
+        "assets/models/fighters/ganja.glb"
+    });
 
-    Logger::Info("CharacterManager", "Fighter roster initialized with 3 fighters.");
+    // Default starting match: OODIII JII vs WINPAK
+    SetupMatch(0, 2, true);
+
+    Logger::Info("CharacterManager", "Fighter roster initialized with 4 specialized characters: OODIII JII, LUHAR IHDNAG, WINPAK, GANJA.");
 }
 
 const CharacterInfo* CharacterManager::GetCharacterInfo(int id) const {
@@ -53,24 +66,24 @@ void CharacterManager::SetupMatch(int p1CharId, int p2CharId, bool vsAI) {
     const CharacterInfo* info1 = GetCharacterInfo(p1CharId);
     const CharacterInfo* info2 = GetCharacterInfo(p2CharId);
 
-    std::string name1 = info1 ? info1->name : "LOTUS";
-    Color color1 = info1 ? info1->primaryColor : Color{220, 38, 38, 255};
+    std::string name1 = info1 ? info1->name : "OODIII JII";
+    Color color1 = info1 ? info1->primaryColor : Color{234, 179, 8, 255};
     std::string glb1 = info1 ? info1->modelGlbPath : "";
 
-    std::string name2 = info2 ? info2->name : "KAGE";
-    Color color2 = info2 ? info2->primaryColor : Color{59, 130, 246, 255};
+    std::string name2 = info2 ? info2->name : "WINPAK";
+    Color color2 = info2 ? info2->primaryColor : Color{225, 29, 72, 255};
     std::string glb2 = info2 ? info2->modelGlbPath : "";
 
     // P1 spawns at -2.5m on X-axis, P2 spawns at +2.5m
-    m_player1 = std::make_unique<Fighter>(0, name1, color1, Vector3{-2.5f, 0.0f, 0.0f});
-    m_player2 = std::make_unique<Fighter>(1, name2, color2, Vector3{ 2.5f, 0.0f, 0.0f});
+    m_player1 = std::make_unique<Fighter>(0, p1CharId, name1, color1, Vector3{-2.5f, 0.0f, 0.0f});
+    m_player2 = std::make_unique<Fighter>(1, p2CharId, name2, color2, Vector3{ 2.5f, 0.0f, 0.0f});
 
     m_player1->Init();
     m_player2->Init();
 
     m_player2->SetIsAI(vsAI);
 
-    // Attempt to load Blender models if user created them
+    // Attempt to load Blender models if available
     if (!glb1.empty()) m_player1->LoadBlenderModel(glb1);
     if (!glb2.empty()) m_player2->LoadBlenderModel(glb2);
 
