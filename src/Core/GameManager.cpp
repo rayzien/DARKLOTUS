@@ -113,6 +113,7 @@ void GameManager::SetupMainMenuButtons() {
         [this]() {
             m_soundManager->PlaySFX(SoundEffectType::MENU_SELECT);
             m_vsAI = true;
+            m_buttonManager->SetTwoPlayerMode(false);
             SetState(GameState::CHARACTER_SELECT);
         }
     });
@@ -125,6 +126,7 @@ void GameManager::SetupMainMenuButtons() {
         [this]() {
             m_soundManager->PlaySFX(SoundEffectType::MENU_SELECT);
             m_vsAI = false;
+            m_buttonManager->SetTwoPlayerMode(true);
             SetState(GameState::CHARACTER_SELECT);
         }
     });
@@ -503,6 +505,9 @@ void GameManager::Render() {
                 // Combo displays
                 m_uiManager->DrawComboCounter(0, m_combatManager->GetComboCount(0), m_combatManager->GetComboDamage(0));
                 m_uiManager->DrawComboCounter(1, m_combatManager->GetComboCount(1), m_combatManager->GetComboDamage(1));
+
+                // Real-time Input / Controller Telemetry Display
+                m_uiManager->DrawInputTelemetry(m_buttonManager.get(), p1, p2);
             }
             break;
         }

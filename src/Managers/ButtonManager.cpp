@@ -44,35 +44,116 @@ bool ButtonManager::IsButtonClicked(const std::string& id) const {
     return m_lastClickedButton == id;
 }
 
+int ButtonManager::GetPrimaryGamepadIndex() const {
+    int fallback = -1;
+    for (int i = 0; i < 4; ++i) {
+        if (::IsGamepadAvailable(i)) {
+            const char* name = ::GetGamepadName(i);
+            std::string n = name ? name : "";
+            // Prioritize physical Xbox / 360 / ShanWan controller over virtual devices
+            if (n.find("Virtual") == std::string::npos &&
+               (n.find("Xbox") != std::string::npos ||
+                n.find("X-Box") != std::string::npos ||
+                n.find("360") != std::string::npos ||
+                n.find("ShanWan") != std::string::npos ||
+                n.find("Pad") != std::string::npos ||
+                n.find("Controller") != std::string::npos)) {
+                return i;
+            }
+            if (fallback < 0) fallback = i;
+        }
+    }
+    return fallback;
+}
+
+bool ButtonManager::IsAnyGamepadConnected() const {
+    for (int i = 0; i < 4; ++i) {
+        if (::IsGamepadAvailable(i)) return true;
+    }
+    return false;
+}
+
 bool ButtonManager::IsGamepadConnected(int playerIndex) const {
+    if (playerIndex == 0) {
+        return IsAnyGamepadConnected();
+    }
     return ::IsGamepadAvailable(playerIndex);
 }
 
 std::string ButtonManager::GetGamepadDeviceName(int playerIndex) const {
-    if (::IsGamepadAvailable(playerIndex)) {
-        const char* name = ::GetGamepadName(playerIndex);
-        return name ? std::string(name) : "Generic Gamepad";
+    if (playerIndex == 0) {
+        int pad = GetPrimaryGamepadIndex();
+        if (pad >= 0 && ::IsGamepadAvailable(pad)) {
+            const char* name = ::GetGamepadName(pad);
+            return name ? std::string(name) : "Xbox 360 Controller";
+        }
+    } else {
+        if (::IsGamepadAvailable(playerIndex)) {
+            const char* name = ::GetGamepadName(playerIndex);
+            return name ? std::string(name) : "Gamepad";
+        }
     }
     return "Disconnected";
 }
 
+Vector2 ButtonManager::GetGamepadStick(int playerIndex) const {
+    int pad = (playerIndex == 0) ? GetPrimaryGamepadIndex() : playerIndex;
+    if (pad >= 0 && ::IsGamepadAvailable(pad)) {
+        return Vector2{
+            ::GetGamepadAxisMovement(pad, GAMEPAD_AXIS_LEFT_X),
+            ::GetGamepadAxisMovement(pad, GAMEPAD_AXIS_LEFT_Y)
+        };
+    }
+    return Vector2{0.0f, 0.0f};
+}
+
 void ButtonManager::TriggerVibration(int playerIndex, float leftMotor, float rightMotor, float duration) {
-    if (::IsGamepadAvailable(playerIndex)) {
-        ::SetGamepadVibration(playerIndex, leftMotor, rightMotor, duration);
+    int pad = (playerIndex == 0) ? GetPrimaryGamepadIndex() : playerIndex;
+    if (pad >= 0 && ::IsGamepadAvailable(pad)) {
+        ::SetGamepadVibration(pad, leftMotor, rightMotor, duration);
     }
 }
 
 bool ButtonManager::WasGamepadButtonPressed(int playerIndex, int gamepadButton) const {
+    if (playerIndex == 0) {
+        int pad = GetPrimaryGamepadIndex();
+        if (pad >= 0 && ::IsGamepadButtonPressed(pad, gamepadButton)) return true;
+        for (int i = 0; i < 4; ++i) {
+            if (::IsGamepadAvailable(i) && ::IsGamepadButtonPressed(i, gamepadButton)) return true;
+        }
+        return false;
+    }
     if (!::IsGamepadAvailable(playerIndex)) return false;
     return ::IsGamepadButtonPressed(playerIndex, gamepadButton);
 }
 
 bool ButtonManager::WasGamepadButtonReleased(int playerIndex, int gamepadButton) const {
+    if (playerIndex == 0) {
+        int pad = GetPrimaryGamepadIndex();
+        if (pad >= 0 && ::IsGamepadButtonReleased(pad, gamepadButton)) return true;
+        for (int i = 0; i < 4; ++i) {
+            if (::IsGamepadAvailable(i) && ::IsGamepadButtonReleased(i, gamepadButton)) return true;
+        }
+        return false;
+    }
     if (!::IsGamepadAvailable(playerIndex)) return false;
     return ::IsGamepadButtonReleased(playerIndex, gamepadButton);
 }
 
 float ButtonManager::GetGamepadAxis(int playerIndex, int axis) const {
+    if (playerIndex == 0) {
+        int pad = GetPrimaryGamepadIndex();
+        if (pad >= 0 && ::IsGamepadAvailable(pad)) {
+            return ::GetGamepadAxisMovement(pad, axis);
+        }
+        for (int i = 0; i < 4; ++i) {
+            if (::IsGamepadAvailable(i)) {
+                float v = ::GetGamepadAxisMovement(i, axis);
+                if (std::abs(v) > 0.15f) return v;
+            }
+        }
+        return 0.0f;
+    }
     if (!::IsGamepadAvailable(playerIndex)) return 0.0f;
     return ::GetGamepadAxisMovement(playerIndex, axis);
 }
@@ -122,19 +203,21 @@ void ButtonManager::Update(float deltaTime, int currentFrame) {
         bool padDown = false;
         bool padConfirm = false;
 
-        // Check Gamepad 0 or Keyboard arrow keys for menu navigation
-        if (::IsGamepadAvailable(0)) {
-            float stickY = ::GetGamepadAxisMovement(0, GAMEPAD_AXIS_LEFT_Y);
-            float stickX = ::GetGamepadAxisMovement(0, GAMEPAD_AXIS_LEFT_X);
+        // Check ALL connected gamepads and keyboard for menu navigation
+        for (int g = 0; g < 4; ++g) {
+            if (!::IsGamepadAvailable(g)) continue;
 
-            if (::IsGamepadButtonPressed(0, GAMEPAD_BUTTON_LEFT_FACE_UP) || stickY < -0.6f) padUp = true;
-            if (::IsGamepadButtonPressed(0, GAMEPAD_BUTTON_LEFT_FACE_DOWN) || stickY > 0.6f) padDown = true;
-            if (::IsGamepadButtonPressed(0, GAMEPAD_BUTTON_LEFT_FACE_LEFT) || stickX < -0.6f) padUp = true;
-            if (::IsGamepadButtonPressed(0, GAMEPAD_BUTTON_LEFT_FACE_RIGHT) || stickX > 0.6f) padDown = true;
+            float stickY = ::GetGamepadAxisMovement(g, GAMEPAD_AXIS_LEFT_Y);
+            float stickX = ::GetGamepadAxisMovement(g, GAMEPAD_AXIS_LEFT_X);
 
-            // Confirm on A / Cross or Start
-            if (::IsGamepadButtonPressed(0, GAMEPAD_BUTTON_RIGHT_FACE_DOWN) ||
-                ::IsGamepadButtonPressed(0, GAMEPAD_BUTTON_MIDDLE_RIGHT)) {
+            if (::IsGamepadButtonPressed(g, GAMEPAD_BUTTON_LEFT_FACE_UP) || stickY < -0.6f) padUp = true;
+            if (::IsGamepadButtonPressed(g, GAMEPAD_BUTTON_LEFT_FACE_DOWN) || stickY > 0.6f) padDown = true;
+            if (::IsGamepadButtonPressed(g, GAMEPAD_BUTTON_LEFT_FACE_LEFT) || stickX < -0.6f) padUp = true;
+            if (::IsGamepadButtonPressed(g, GAMEPAD_BUTTON_LEFT_FACE_RIGHT) || stickX > 0.6f) padDown = true;
+
+            // Confirm on A / Cross or Start / Menu button
+            if (::IsGamepadButtonPressed(g, GAMEPAD_BUTTON_RIGHT_FACE_DOWN) ||
+                ::IsGamepadButtonPressed(g, GAMEPAD_BUTTON_MIDDLE_RIGHT)) {
                 padConfirm = true;
             }
         }
@@ -204,82 +287,122 @@ void ButtonManager::Update(float deltaTime, int currentFrame) {
     m_previousInputs[1] = m_currentInputs[1];
 
     // ==========================================
-    // POLL PLAYER 1 INPUTS (Keyboard & Gamepad 0)
+    // POLL PLAYER 1 INPUTS (Keyboard & Gamepad)
     // ==========================================
     unsigned int p1 = BTN_NONE;
 
-    // Movement (Keyboard)
-    if (::IsKeyDown(KEY_W)) p1 |= BTN_UP;
-    if (::IsKeyDown(KEY_S)) p1 |= BTN_DOWN;
-    if (::IsKeyDown(KEY_A)) p1 |= BTN_LEFT;
-    if (::IsKeyDown(KEY_D)) p1 |= BTN_RIGHT;
+    // Movement (Keyboard):
+    // In single player / VS CPU / practice, Arrow Keys AND WASD both move Player 1!
+    if (m_twoPlayerMode) {
+        if (::IsKeyDown(KEY_W)) p1 |= BTN_UP;
+        if (::IsKeyDown(KEY_S)) p1 |= BTN_DOWN;
+        if (::IsKeyDown(KEY_A)) p1 |= BTN_LEFT;
+        if (::IsKeyDown(KEY_D)) p1 |= BTN_RIGHT;
+    } else {
+        if (::IsKeyDown(KEY_W) || ::IsKeyDown(KEY_UP))    p1 |= BTN_UP;
+        if (::IsKeyDown(KEY_S) || ::IsKeyDown(KEY_DOWN))  p1 |= BTN_DOWN;
+        if (::IsKeyDown(KEY_A) || ::IsKeyDown(KEY_LEFT))  p1 |= BTN_LEFT;
+        if (::IsKeyDown(KEY_D) || ::IsKeyDown(KEY_RIGHT)) p1 |= BTN_RIGHT;
+    }
 
-    // Tekken 4-buttons (Keyboard): 1=LP (U), 2=RP (I), 3=LK (J), 4=RK (K)
-    if (::IsKeyDown(KEY_U)) p1 |= BTN_LP;
-    if (::IsKeyDown(KEY_I)) p1 |= BTN_RP;
-    if (::IsKeyDown(KEY_J)) p1 |= BTN_LK;
-    if (::IsKeyDown(KEY_K)) p1 |= BTN_RK;
+    // Tekken 4-buttons (Keyboard):
+    // Standard Tekken layout: 1=LP (U), 2=RP (I), 3=LK (J), 4=RK (K)
+    // Classic arcade bottom-row: 1=LP (Z), 2=RP (X), 3=LK (C), 4=RK (V)
+    if (::IsKeyDown(KEY_U) || ::IsKeyDown(KEY_Z)) p1 |= BTN_LP;
+    if (::IsKeyDown(KEY_I) || ::IsKeyDown(KEY_X)) p1 |= BTN_RP;
+    if (::IsKeyDown(KEY_J) || ::IsKeyDown(KEY_C)) p1 |= BTN_LK;
+    if (::IsKeyDown(KEY_K) || ::IsKeyDown(KEY_V)) p1 |= BTN_RK;
 
-    // Shortcuts (Keyboard)
-    if (::IsKeyDown(KEY_O)) p1 |= (BTN_LP | BTN_RP); // 1+2
-    if (::IsKeyDown(KEY_L)) p1 |= (BTN_LK | BTN_RK); // 3+4
-    if (::IsKeyDown(KEY_SPACE)) p1 |= BTN_HEAT_RAGE; // Rage Art / Heat Burst
+    // Shortcuts (Keyboard):
+    if (::IsKeyDown(KEY_O) || ::IsKeyDown(KEY_F)) p1 |= (BTN_LP | BTN_RP); // 1+2
+    if (::IsKeyDown(KEY_L) || ::IsKeyDown(KEY_G)) p1 |= (BTN_LK | BTN_RK); // 3+4
+    if (::IsKeyDown(KEY_H) || ::IsKeyDown(KEY_T)) p1 |= BTN_THROW;          // Throw (1+3)
+    if (::IsKeyDown(KEY_SPACE) || ::IsKeyDown(KEY_R)) p1 |= BTN_HEAT_RAGE; // Rage Art
+
+    // Numpad support for P1 when in single player
+    if (!m_twoPlayerMode) {
+        if (::IsKeyDown(KEY_KP_4)) p1 |= BTN_LP;
+        if (::IsKeyDown(KEY_KP_5)) p1 |= BTN_RP;
+        if (::IsKeyDown(KEY_KP_1)) p1 |= BTN_LK;
+        if (::IsKeyDown(KEY_KP_2)) p1 |= BTN_RK;
+        if (::IsKeyDown(KEY_KP_6)) p1 |= (BTN_LP | BTN_RP);
+        if (::IsKeyDown(KEY_KP_3)) p1 |= (BTN_LK | BTN_RK);
+        if (::IsKeyDown(KEY_KP_7)) p1 |= BTN_THROW;
+        if (::IsKeyDown(KEY_KP_ENTER)) p1 |= BTN_HEAT_RAGE;
+    }
 
     // ==========================================
-    // GAMEPAD 0 SUPPORT (Player 1)
+    // GAMEPAD SUPPORT FOR PLAYER 1 (Physical Xbox & All Available Gamepads)
     // ==========================================
-    if (::IsGamepadAvailable(0)) {
+    auto pollGamepadToPlayer1 = [&](int padIdx) {
+        if (!::IsGamepadAvailable(padIdx)) return;
+
         // D-Pad Movement
-        if (::IsGamepadButtonDown(0, GAMEPAD_BUTTON_LEFT_FACE_UP)) p1 |= BTN_UP;
-        if (::IsGamepadButtonDown(0, GAMEPAD_BUTTON_LEFT_FACE_DOWN)) p1 |= BTN_DOWN;
-        if (::IsGamepadButtonDown(0, GAMEPAD_BUTTON_LEFT_FACE_LEFT)) p1 |= BTN_LEFT;
-        if (::IsGamepadButtonDown(0, GAMEPAD_BUTTON_LEFT_FACE_RIGHT)) p1 |= BTN_RIGHT;
+        if (::IsGamepadButtonDown(padIdx, GAMEPAD_BUTTON_LEFT_FACE_UP))    p1 |= BTN_UP;
+        if (::IsGamepadButtonDown(padIdx, GAMEPAD_BUTTON_LEFT_FACE_DOWN))  p1 |= BTN_DOWN;
+        if (::IsGamepadButtonDown(padIdx, GAMEPAD_BUTTON_LEFT_FACE_LEFT))  p1 |= BTN_LEFT;
+        if (::IsGamepadButtonDown(padIdx, GAMEPAD_BUTTON_LEFT_FACE_RIGHT)) p1 |= BTN_RIGHT;
 
-        // Left Analog Stick Movement
-        float stickX = ::GetGamepadAxisMovement(0, GAMEPAD_AXIS_LEFT_X);
-        float stickY = ::GetGamepadAxisMovement(0, GAMEPAD_AXIS_LEFT_Y);
-        if (stickX > 0.45f) p1 |= BTN_RIGHT;
-        if (stickX < -0.45f) p1 |= BTN_LEFT;
-        if (stickY > 0.45f) p1 |= BTN_DOWN;
-        if (stickY < -0.45f) p1 |= BTN_UP;
+        // Left Analog Stick Movement (with deadzone filtering)
+        float stickX = ::GetGamepadAxisMovement(padIdx, GAMEPAD_AXIS_LEFT_X);
+        float stickY = ::GetGamepadAxisMovement(padIdx, GAMEPAD_AXIS_LEFT_Y);
+        if (stickX > 0.35f)  p1 |= BTN_RIGHT;
+        if (stickX < -0.35f) p1 |= BTN_LEFT;
+        if (stickY > 0.35f)  p1 |= BTN_DOWN;
+        if (stickY < -0.35f) p1 |= BTN_UP;
 
-        // Tekken 4-Face Buttons:
-        // X (Square) -> 1: Left Punch
-        // Y (Triangle) -> 2: Right Punch
-        // A (Cross) -> 3: Left Kick
-        // B (Circle) -> 4: Right Kick
-        if (::IsGamepadButtonDown(0, GAMEPAD_BUTTON_RIGHT_FACE_LEFT))  p1 |= BTN_LP;
-        if (::IsGamepadButtonDown(0, GAMEPAD_BUTTON_RIGHT_FACE_UP))    p1 |= BTN_RP;
-        if (::IsGamepadButtonDown(0, GAMEPAD_BUTTON_RIGHT_FACE_DOWN))  p1 |= BTN_LK;
-        if (::IsGamepadButtonDown(0, GAMEPAD_BUTTON_RIGHT_FACE_RIGHT)) p1 |= BTN_RK;
+        // Physical Xbox Controller 4-Face Buttons:
+        // X (Square / West Face)    -> 1: Left Punch
+        // Y (Triangle / North Face)  -> 2: Right Punch
+        // A (Cross / South Face)     -> 3: Left Kick
+        // B (Circle / East Face)     -> 4: Right Kick
+        if (::IsGamepadButtonDown(padIdx, GAMEPAD_BUTTON_RIGHT_FACE_LEFT))  p1 |= BTN_LP;
+        if (::IsGamepadButtonDown(padIdx, GAMEPAD_BUTTON_RIGHT_FACE_UP))    p1 |= BTN_RP;
+        if (::IsGamepadButtonDown(padIdx, GAMEPAD_BUTTON_RIGHT_FACE_DOWN))  p1 |= BTN_LK;
+        if (::IsGamepadButtonDown(padIdx, GAMEPAD_BUTTON_RIGHT_FACE_RIGHT)) p1 |= BTN_RK;
 
-        // Bumpers & Triggers (Tekken Shortcuts)
-        // RB (R1): 1 + 2 (Dual Punch / Demon Breath / Mach Punch / Tetsuzanko / Demon Paw)
-        if (::IsGamepadButtonDown(0, GAMEPAD_BUTTON_RIGHT_TRIGGER_1)) p1 |= (BTN_LP | BTN_RP);
+        // Bumpers & Triggers (Tekken Authentic Shortcuts)
+        // RB (Right Bumper): 1 + 2 (Dual Strike / Demon Breath / Mach Punch / Tetsuzanko)
+        if (::IsGamepadButtonDown(padIdx, GAMEPAD_BUTTON_RIGHT_TRIGGER_1)) p1 |= (BTN_LP | BTN_RP);
 
-        // RT (R2): 3 + 4 (Dual Kick / Raiden Torpedo / Kangaroo Dropkick / Can-Can)
-        if (::IsGamepadButtonDown(0, GAMEPAD_BUTTON_RIGHT_TRIGGER_2) ||
-            ::GetGamepadAxisMovement(0, GAMEPAD_AXIS_RIGHT_TRIGGER) > 0.4f) {
+        // RT (Right Trigger): 3 + 4 (Dual Kick / Raiden Torpedo / Can-Can / Kangaroo Dropkick)
+        if (::IsGamepadButtonDown(padIdx, GAMEPAD_BUTTON_RIGHT_TRIGGER_2) ||
+            ::GetGamepadAxisMovement(padIdx, GAMEPAD_AXIS_RIGHT_TRIGGER) > 0.25f) {
             p1 |= (BTN_LK | BTN_RK);
         }
 
-        // LB (L1): Heat Burst / Rage Art
-        if (::IsGamepadButtonDown(0, GAMEPAD_BUTTON_LEFT_TRIGGER_1) ||
-            ::IsGamepadButtonDown(0, GAMEPAD_BUTTON_RIGHT_THUMB)) {
+        // LB (Left Bumper) or R3 (Right Stick Click): Rage Art / Heat Burst
+        if (::IsGamepadButtonDown(padIdx, GAMEPAD_BUTTON_LEFT_TRIGGER_1) ||
+            ::IsGamepadButtonDown(padIdx, GAMEPAD_BUTTON_RIGHT_THUMB)) {
             p1 |= BTN_HEAT_RAGE;
         }
 
-        // LT (L2): 1 + 3 (Throw)
-        if (::IsGamepadButtonDown(0, GAMEPAD_BUTTON_LEFT_TRIGGER_2) ||
-            ::GetGamepadAxisMovement(0, GAMEPAD_AXIS_LEFT_TRIGGER) > 0.4f) {
-            p1 |= (BTN_LP | BTN_LK);
+        // LT (Left Trigger) or L3 (Left Stick Click): Throw (1+3)
+        if (::IsGamepadButtonDown(padIdx, GAMEPAD_BUTTON_LEFT_TRIGGER_2) ||
+            ::GetGamepadAxisMovement(padIdx, GAMEPAD_AXIS_LEFT_TRIGGER) > 0.25f ||
+            ::IsGamepadButtonDown(padIdx, GAMEPAD_BUTTON_LEFT_THUMB)) {
+            p1 |= BTN_THROW;
+        }
+    };
+
+    int primaryPad = GetPrimaryGamepadIndex();
+    if (!m_twoPlayerMode) {
+        // In 1P / VS CPU mode, check all connected gamepads so any plugged-in Xbox pad works instantly!
+        for (int g = 0; g < 4; ++g) {
+            pollGamepadToPlayer1(g);
+        }
+    } else {
+        if (primaryPad >= 0) {
+            pollGamepadToPlayer1(primaryPad);
+        } else {
+            pollGamepadToPlayer1(0);
         }
     }
 
     m_currentInputs[0] = p1;
 
     // ==========================================
-    // POLL PLAYER 2 INPUTS (Keyboard & Gamepad 1)
+    // POLL PLAYER 2 INPUTS (Keyboard & Gamepad)
     // ==========================================
     unsigned int p2 = BTN_NONE;
     if (::IsKeyDown(KEY_UP))    p2 |= BTN_UP;
@@ -294,35 +417,43 @@ void ButtonManager::Update(float deltaTime, int currentFrame) {
     if (::IsKeyDown(KEY_KP_2)) p2 |= BTN_RK;
     if (::IsKeyDown(KEY_KP_6)) p2 |= (BTN_LP | BTN_RP);
     if (::IsKeyDown(KEY_KP_3)) p2 |= (BTN_LK | BTN_RK);
+    if (::IsKeyDown(KEY_KP_7)) p2 |= BTN_THROW;
     if (::IsKeyDown(KEY_KP_ENTER)) p2 |= BTN_HEAT_RAGE;
 
-    // Gamepad 1 support
-    if (::IsGamepadAvailable(1)) {
-        if (::IsGamepadButtonDown(1, GAMEPAD_BUTTON_LEFT_FACE_UP)) p2 |= BTN_UP;
-        if (::IsGamepadButtonDown(1, GAMEPAD_BUTTON_LEFT_FACE_DOWN)) p2 |= BTN_DOWN;
-        if (::IsGamepadButtonDown(1, GAMEPAD_BUTTON_LEFT_FACE_LEFT)) p2 |= BTN_LEFT;
-        if (::IsGamepadButtonDown(1, GAMEPAD_BUTTON_LEFT_FACE_RIGHT)) p2 |= BTN_RIGHT;
+    // Gamepad 1 for Player 2 (if distinct from P1's pad in 2P mode)
+    if (m_twoPlayerMode) {
+        int p2Pad = (primaryPad == 0) ? 1 : 0;
+        if (::IsGamepadAvailable(p2Pad)) {
+            if (::IsGamepadButtonDown(p2Pad, GAMEPAD_BUTTON_LEFT_FACE_UP))    p2 |= BTN_UP;
+            if (::IsGamepadButtonDown(p2Pad, GAMEPAD_BUTTON_LEFT_FACE_DOWN))  p2 |= BTN_DOWN;
+            if (::IsGamepadButtonDown(p2Pad, GAMEPAD_BUTTON_LEFT_FACE_LEFT))  p2 |= BTN_LEFT;
+            if (::IsGamepadButtonDown(p2Pad, GAMEPAD_BUTTON_LEFT_FACE_RIGHT)) p2 |= BTN_RIGHT;
 
-        float stick2X = ::GetGamepadAxisMovement(1, GAMEPAD_AXIS_LEFT_X);
-        float stick2Y = ::GetGamepadAxisMovement(1, GAMEPAD_AXIS_LEFT_Y);
-        if (stick2X > 0.45f) p2 |= BTN_RIGHT;
-        if (stick2X < -0.45f) p2 |= BTN_LEFT;
-        if (stick2Y > 0.45f) p2 |= BTN_DOWN;
-        if (stick2Y < -0.45f) p2 |= BTN_UP;
+            float stick2X = ::GetGamepadAxisMovement(p2Pad, GAMEPAD_AXIS_LEFT_X);
+            float stick2Y = ::GetGamepadAxisMovement(p2Pad, GAMEPAD_AXIS_LEFT_Y);
+            if (stick2X > 0.35f)  p2 |= BTN_RIGHT;
+            if (stick2X < -0.35f) p2 |= BTN_LEFT;
+            if (stick2Y > 0.35f)  p2 |= BTN_DOWN;
+            if (stick2Y < -0.35f) p2 |= BTN_UP;
 
-        if (::IsGamepadButtonDown(1, GAMEPAD_BUTTON_RIGHT_FACE_LEFT))  p2 |= BTN_LP;
-        if (::IsGamepadButtonDown(1, GAMEPAD_BUTTON_RIGHT_FACE_UP))    p2 |= BTN_RP;
-        if (::IsGamepadButtonDown(1, GAMEPAD_BUTTON_RIGHT_FACE_DOWN))  p2 |= BTN_LK;
-        if (::IsGamepadButtonDown(1, GAMEPAD_BUTTON_RIGHT_FACE_RIGHT)) p2 |= BTN_RK;
+            if (::IsGamepadButtonDown(p2Pad, GAMEPAD_BUTTON_RIGHT_FACE_LEFT))  p2 |= BTN_LP;
+            if (::IsGamepadButtonDown(p2Pad, GAMEPAD_BUTTON_RIGHT_FACE_UP))    p2 |= BTN_RP;
+            if (::IsGamepadButtonDown(p2Pad, GAMEPAD_BUTTON_RIGHT_FACE_DOWN))  p2 |= BTN_LK;
+            if (::IsGamepadButtonDown(p2Pad, GAMEPAD_BUTTON_RIGHT_FACE_RIGHT)) p2 |= BTN_RK;
 
-        if (::IsGamepadButtonDown(1, GAMEPAD_BUTTON_RIGHT_TRIGGER_1)) p2 |= (BTN_LP | BTN_RP);
-        if (::IsGamepadButtonDown(1, GAMEPAD_BUTTON_RIGHT_TRIGGER_2) ||
-            ::GetGamepadAxisMovement(1, GAMEPAD_AXIS_RIGHT_TRIGGER) > 0.4f) {
-            p2 |= (BTN_LK | BTN_RK);
-        }
-        if (::IsGamepadButtonDown(1, GAMEPAD_BUTTON_LEFT_TRIGGER_1) ||
-            ::IsGamepadButtonDown(1, GAMEPAD_BUTTON_RIGHT_THUMB)) {
-            p2 |= BTN_HEAT_RAGE;
+            if (::IsGamepadButtonDown(p2Pad, GAMEPAD_BUTTON_RIGHT_TRIGGER_1)) p2 |= (BTN_LP | BTN_RP);
+            if (::IsGamepadButtonDown(p2Pad, GAMEPAD_BUTTON_RIGHT_TRIGGER_2) ||
+                ::GetGamepadAxisMovement(p2Pad, GAMEPAD_AXIS_RIGHT_TRIGGER) > 0.25f) {
+                p2 |= (BTN_LK | BTN_RK);
+            }
+            if (::IsGamepadButtonDown(p2Pad, GAMEPAD_BUTTON_LEFT_TRIGGER_1) ||
+                ::IsGamepadButtonDown(p2Pad, GAMEPAD_BUTTON_RIGHT_THUMB)) {
+                p2 |= BTN_HEAT_RAGE;
+            }
+            if (::IsGamepadButtonDown(p2Pad, GAMEPAD_BUTTON_LEFT_TRIGGER_2) ||
+                ::GetGamepadAxisMovement(p2Pad, GAMEPAD_AXIS_LEFT_TRIGGER) > 0.25f) {
+                p2 |= BTN_THROW;
+            }
         }
     }
 
@@ -379,11 +510,12 @@ void ButtonManager::DrawUI() {
 
     // Draw Controller connection status banner
     float sh = static_cast<float>(::GetScreenHeight());
-    if (::IsGamepadAvailable(0)) {
-        std::string padName = "🎮 Controller: " + GetGamepadDeviceName(0) + " [Connected]";
+    int pad = GetPrimaryGamepadIndex();
+    if (pad >= 0 && ::IsGamepadAvailable(pad)) {
+        std::string padName = "🎮 Controller: " + GetGamepadDeviceName(0) + " [Connected & Active]";
         ::DrawText(padName.c_str(), 20, static_cast<int>(sh - 30), 16, Color{34, 197, 94, 255});
     } else {
-        ::DrawText("🎮 No Controller detected (Using Keyboard)", 20, static_cast<int>(sh - 30), 16, Color{160, 165, 180, 200});
+        ::DrawText("🎮 Controller: Plug in Xbox controller or use Keyboard (WASD/Arrows + U/I/J/K or Z/X/C/V)", 20, static_cast<int>(sh - 30), 16, Color{160, 165, 180, 200});
     }
 }
 

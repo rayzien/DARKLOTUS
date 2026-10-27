@@ -43,7 +43,7 @@ void Fighter::ResetRound(Vector3 spawnPos) {
 }
 
 bool Fighter::LoadBlenderModel(const std::string& glbFilePath) {
-    if (::FileExists(glbFilePath.c_str())) {
+    if (::IsWindowReady() && ::FileExists(glbFilePath.c_str())) {
         if (m_hasBlenderModel) {
             ::UnloadModel(m_model);
         }
@@ -52,7 +52,11 @@ bool Fighter::LoadBlenderModel(const std::string& glbFilePath) {
         Logger::Info("Fighter", m_name + " successfully loaded Blender 3D model: " + glbFilePath);
         return true;
     }
-    Logger::Info("Fighter", "Blender model not found at '" + glbFilePath + "'. Using specialized 3D mannequin rig.");
+    if (!::IsWindowReady()) {
+        Logger::Info("Fighter", "OpenGL window context not ready. Deferring 3D model upload.");
+    } else {
+        Logger::Info("Fighter", "Blender model not found at '" + glbFilePath + "'. Using specialized 3D mannequin rig.");
+    }
     m_hasBlenderModel = false;
     return false;
 }
@@ -257,6 +261,7 @@ void Fighter::Update(float deltaTime, int /*currentFrame*/, unsigned int inputBi
                 rage.radius = 0.60f;
                 rage.damage = IsInRage() ? 3300 : 1500;
                 rage.height = AttackHeight::MID;
+                rage.type = AttackType::RAGE_ART;
                 rage.startupFrames = 20;
                 rage.activeFrames = 6;
                 rage.recoveryFrames = 40;
@@ -266,6 +271,24 @@ void Fighter::Update(float deltaTime, int /*currentFrame*/, unsigned int inputBi
                 rage.isLauncher = true;
                 rage.causesSplat = true;
                 ExecuteMove(rage);
+            } else if ((inputBits & BTN_THROW) || ((inputBits & BTN_LP) && (inputBits & BTN_LK))) {
+                // Throw: Mishima Stonehead Headbutt (1+3)
+                Hitbox3D stonehead{};
+                stonehead.moveName = "MISHIMA STONEHEAD HEADBUTT (THROW)";
+                stonehead.offset = Vector3{0.70f, 1.40f, 0.0f};
+                stonehead.radius = 0.50f;
+                stonehead.damage = 1500;
+                stonehead.height = AttackHeight::HIGH;
+                stonehead.type = AttackType::THROW_SLAM;
+                stonehead.startupFrames = 12;
+                stonehead.activeFrames = 4;
+                stonehead.recoveryFrames = 20;
+                stonehead.hitAdvantage = 14;
+                stonehead.blockAdvantage = -4;
+                stonehead.knockback = Vector3{isFacingRight ? 6.5f : -6.5f, 1.0f, 0.0f};
+                stonehead.isLauncher = false;
+                stonehead.causesSplat = true;
+                ExecuteMove(stonehead);
             } else if ((inputBits & BTN_LP) && (inputBits & BTN_RP)) {
                 // 1+2: Heihachi Demon Breath (f+1+2 Palm Strike)
                 Hitbox3D palm{};
@@ -274,6 +297,7 @@ void Fighter::Update(float deltaTime, int /*currentFrame*/, unsigned int inputBi
                 palm.radius = 0.45f;
                 palm.damage = 1450;
                 palm.height = AttackHeight::MID;
+                palm.type = AttackType::DUAL_STRIKE;
                 palm.startupFrames = 15;
                 palm.activeFrames = 4;
                 palm.recoveryFrames = 18;
@@ -291,6 +315,7 @@ void Fighter::Update(float deltaTime, int /*currentFrame*/, unsigned int inputBi
                 torpedo.radius = 0.52f;
                 torpedo.damage = 1600;
                 torpedo.height = AttackHeight::MID;
+                torpedo.type = AttackType::FLYING_DIVE_DROPKICK;
                 torpedo.startupFrames = 18;
                 torpedo.activeFrames = 6;
                 torpedo.recoveryFrames = 22;
@@ -309,6 +334,7 @@ void Fighter::Update(float deltaTime, int /*currentFrame*/, unsigned int inputBi
                 ewgf.radius = 0.48f;
                 ewgf.damage = 1750;
                 ewgf.height = AttackHeight::MID;
+                ewgf.type = AttackType::UPPERCUT_LAUNCHER;
                 ewgf.startupFrames = 14; // Fast electric Mishima frame!
                 ewgf.activeFrames = 5;
                 ewgf.recoveryFrames = 20;
@@ -326,6 +352,7 @@ void Fighter::Update(float deltaTime, int /*currentFrame*/, unsigned int inputBi
                 hellsweep.radius = 0.40f;
                 hellsweep.damage = 1200;
                 hellsweep.height = AttackHeight::LOW;
+                hellsweep.type = AttackType::LOW_SWEEP;
                 hellsweep.startupFrames = 16;
                 hellsweep.activeFrames = 4;
                 hellsweep.recoveryFrames = 22;
@@ -343,6 +370,7 @@ void Fighter::Update(float deltaTime, int /*currentFrame*/, unsigned int inputBi
                 jab.radius = 0.35f;
                 jab.damage = 650;
                 jab.height = AttackHeight::HIGH;
+                jab.type = AttackType::PUNCH_LEFT;
                 jab.startupFrames = 10;
                 jab.activeFrames = 3;
                 jab.recoveryFrames = 11;
@@ -358,6 +386,7 @@ void Fighter::Update(float deltaTime, int /*currentFrame*/, unsigned int inputBi
                 cross.radius = 0.38f;
                 cross.damage = 1000;
                 cross.height = AttackHeight::MID;
+                cross.type = AttackType::PUNCH_RIGHT;
                 cross.startupFrames = 12;
                 cross.activeFrames = 4;
                 cross.recoveryFrames = 14;
@@ -373,6 +402,7 @@ void Fighter::Update(float deltaTime, int /*currentFrame*/, unsigned int inputBi
                 kick.radius = 0.40f;
                 kick.damage = 1250;
                 kick.height = AttackHeight::MID;
+                kick.type = AttackType::KICK_LEFT;
                 kick.startupFrames = 14;
                 kick.activeFrames = 4;
                 kick.recoveryFrames = 18;
@@ -388,6 +418,7 @@ void Fighter::Update(float deltaTime, int /*currentFrame*/, unsigned int inputBi
                 hellAxle.radius = 0.44f;
                 hellAxle.damage = 1550;
                 hellAxle.height = AttackHeight::HIGH;
+                hellAxle.type = AttackType::KICK_RIGHT;
                 hellAxle.startupFrames = 16;
                 hellAxle.activeFrames = 5;
                 hellAxle.recoveryFrames = 22;
@@ -410,6 +441,7 @@ void Fighter::Update(float deltaTime, int /*currentFrame*/, unsigned int inputBi
                 rage.radius = 0.58f;
                 rage.damage = IsInRage() ? 3200 : 1450;
                 rage.height = AttackHeight::MID;
+                rage.type = AttackType::RAGE_ART;
                 rage.startupFrames = 20;
                 rage.activeFrames = 6;
                 rage.recoveryFrames = 40;
@@ -419,6 +451,24 @@ void Fighter::Update(float deltaTime, int /*currentFrame*/, unsigned int inputBi
                 rage.isLauncher = true;
                 rage.causesSplat = true;
                 ExecuteMove(rage);
+            } else if ((inputBits & BTN_THROW) || ((inputBits & BTN_LP) && (inputBits & BTN_LK))) {
+                // Throw: Baji Shoulder Hip Throw (1+3)
+                Hitbox3D bajiThrow{};
+                bajiThrow.moveName = "BAJI SHOULDER HIP THROW (THROW)";
+                bajiThrow.offset = Vector3{0.70f, 1.30f, 0.0f};
+                bajiThrow.radius = 0.48f;
+                bajiThrow.damage = 1450;
+                bajiThrow.height = AttackHeight::HIGH;
+                bajiThrow.type = AttackType::THROW_SLAM;
+                bajiThrow.startupFrames = 12;
+                bajiThrow.activeFrames = 4;
+                bajiThrow.recoveryFrames = 20;
+                bajiThrow.hitAdvantage = 14;
+                bajiThrow.blockAdvantage = -4;
+                bajiThrow.knockback = Vector3{isFacingRight ? 6.0f : -6.0f, 1.0f, 0.0f};
+                bajiThrow.isLauncher = false;
+                bajiThrow.causesSplat = true;
+                ExecuteMove(bajiThrow);
             } else if ((inputBits & BTN_LP) && (inputBits & BTN_RP)) {
                 // 1+2: Tetsuzanko (Iron Body Shoulder Ram - Leo's signature armored tackle!)
                 Hitbox3D tetsuzanko{};
@@ -427,6 +477,7 @@ void Fighter::Update(float deltaTime, int /*currentFrame*/, unsigned int inputBi
                 tetsuzanko.radius = 0.50f;
                 tetsuzanko.damage = 1600;
                 tetsuzanko.height = AttackHeight::MID;
+                tetsuzanko.type = AttackType::DUAL_STRIKE;
                 tetsuzanko.startupFrames = 13; // Fast Baji shoulder!
                 tetsuzanko.activeFrames = 5;
                 tetsuzanko.recoveryFrames = 20;
@@ -444,6 +495,7 @@ void Fighter::Update(float deltaTime, int /*currentFrame*/, unsigned int inputBi
                 crane.radius = 0.46f;
                 crane.damage = 1450;
                 crane.height = AttackHeight::MID;
+                crane.type = AttackType::DUAL_STRIKE;
                 crane.startupFrames = 16;
                 crane.activeFrames = 4;
                 crane.recoveryFrames = 18;
@@ -461,6 +513,7 @@ void Fighter::Update(float deltaTime, int /*currentFrame*/, unsigned int inputBi
                 elbow.radius = 0.44f;
                 elbow.damage = 1650;
                 elbow.height = AttackHeight::MID;
+                elbow.type = AttackType::UPPERCUT_LAUNCHER;
                 elbow.startupFrames = 15;
                 elbow.activeFrames = 5;
                 elbow.recoveryFrames = 22;
@@ -478,6 +531,7 @@ void Fighter::Update(float deltaTime, int /*currentFrame*/, unsigned int inputBi
                 bajiSweep.radius = 0.40f;
                 bajiSweep.damage = 1100;
                 bajiSweep.height = AttackHeight::LOW;
+                bajiSweep.type = AttackType::LOW_SWEEP;
                 bajiSweep.startupFrames = 16;
                 bajiSweep.activeFrames = 4;
                 bajiSweep.recoveryFrames = 20;
@@ -495,6 +549,7 @@ void Fighter::Update(float deltaTime, int /*currentFrame*/, unsigned int inputBi
                 jab.radius = 0.35f;
                 jab.damage = 620;
                 jab.height = AttackHeight::HIGH;
+                jab.type = AttackType::PUNCH_LEFT;
                 jab.startupFrames = 10;
                 jab.activeFrames = 3;
                 jab.recoveryFrames = 11;
@@ -510,6 +565,7 @@ void Fighter::Update(float deltaTime, int /*currentFrame*/, unsigned int inputBi
                 fist.radius = 0.38f;
                 fist.damage = 980;
                 fist.height = AttackHeight::MID;
+                fist.type = AttackType::PUNCH_RIGHT;
                 fist.startupFrames = 12;
                 fist.activeFrames = 4;
                 fist.recoveryFrames = 14;
@@ -525,6 +581,7 @@ void Fighter::Update(float deltaTime, int /*currentFrame*/, unsigned int inputBi
                 shin.radius = 0.38f;
                 shin.damage = 900;
                 shin.height = AttackHeight::LOW;
+                shin.type = AttackType::KICK_LEFT;
                 shin.startupFrames = 13;
                 shin.activeFrames = 3;
                 shin.recoveryFrames = 16;
@@ -540,6 +597,7 @@ void Fighter::Update(float deltaTime, int /*currentFrame*/, unsigned int inputBi
                 axe.radius = 0.42f;
                 axe.damage = 1400;
                 axe.height = AttackHeight::MID;
+                axe.type = AttackType::KICK_RIGHT;
                 axe.startupFrames = 16;
                 axe.activeFrames = 4;
                 axe.recoveryFrames = 20;
@@ -562,6 +620,7 @@ void Fighter::Update(float deltaTime, int /*currentFrame*/, unsigned int inputBi
                 rage.radius = 0.58f;
                 rage.damage = IsInRage() ? 3350 : 1500;
                 rage.height = AttackHeight::MID;
+                rage.type = AttackType::RAGE_ART;
                 rage.startupFrames = 20;
                 rage.activeFrames = 6;
                 rage.recoveryFrames = 40;
@@ -571,6 +630,24 @@ void Fighter::Update(float deltaTime, int /*currentFrame*/, unsigned int inputBi
                 rage.isLauncher = true;
                 rage.causesSplat = true;
                 ExecuteMove(rage);
+            } else if ((inputBits & BTN_THROW) || ((inputBits & BTN_LP) && (inputBits & BTN_LK))) {
+                // Throw: Kazama Comstock Armlock Throw (1+3)
+                Hitbox3D jinThrow{};
+                jinThrow.moveName = "KAZAMA COMSTOCK ARMLOCK (THROW)";
+                jinThrow.offset = Vector3{0.70f, 1.35f, 0.0f};
+                jinThrow.radius = 0.50f;
+                jinThrow.damage = 1500;
+                jinThrow.height = AttackHeight::HIGH;
+                jinThrow.type = AttackType::THROW_SLAM;
+                jinThrow.startupFrames = 12;
+                jinThrow.activeFrames = 4;
+                jinThrow.recoveryFrames = 20;
+                jinThrow.hitAdvantage = 14;
+                jinThrow.blockAdvantage = -4;
+                jinThrow.knockback = Vector3{isFacingRight ? 7.0f : -7.0f, 1.2f, 0.0f};
+                jinThrow.isLauncher = false;
+                jinThrow.causesSplat = true;
+                ExecuteMove(jinThrow);
             } else if ((inputBits & BTN_LP) && (inputBits & BTN_RP)) {
                 // 1+2: Demon Paw (f,f+2 Lunging Straight Fist with Red Lightning!)
                 Hitbox3D demonPaw{};
@@ -579,6 +656,7 @@ void Fighter::Update(float deltaTime, int /*currentFrame*/, unsigned int inputBi
                 demonPaw.radius = 0.48f;
                 demonPaw.damage = 1550;
                 demonPaw.height = AttackHeight::MID;
+                demonPaw.type = AttackType::DUAL_STRIKE;
                 demonPaw.startupFrames = 14;
                 demonPaw.activeFrames = 4;
                 demonPaw.recoveryFrames = 17;
@@ -597,6 +675,7 @@ void Fighter::Update(float deltaTime, int /*currentFrame*/, unsigned int inputBi
                 cancan.radius = 0.48f;
                 cancan.damage = 1700;
                 cancan.height = AttackHeight::MID;
+                cancan.type = AttackType::FLYING_DIVE_DROPKICK;
                 cancan.startupFrames = 15;
                 cancan.activeFrames = 6;
                 cancan.recoveryFrames = 24;
@@ -614,6 +693,7 @@ void Fighter::Update(float deltaTime, int /*currentFrame*/, unsigned int inputBi
                 jinUpper.radius = 0.45f;
                 jinUpper.damage = 1650;
                 jinUpper.height = AttackHeight::MID;
+                jinUpper.type = AttackType::UPPERCUT_LAUNCHER;
                 jinUpper.startupFrames = 15;
                 jinUpper.activeFrames = 5;
                 jinUpper.recoveryFrames = 22;
@@ -631,6 +711,7 @@ void Fighter::Update(float deltaTime, int /*currentFrame*/, unsigned int inputBi
                 jinSweep.radius = 0.40f;
                 jinSweep.damage = 1100;
                 jinSweep.height = AttackHeight::LOW;
+                jinSweep.type = AttackType::LOW_SWEEP;
                 jinSweep.startupFrames = 15;
                 jinSweep.activeFrames = 4;
                 jinSweep.recoveryFrames = 20;
@@ -648,6 +729,7 @@ void Fighter::Update(float deltaTime, int /*currentFrame*/, unsigned int inputBi
                 jab.radius = 0.35f;
                 jab.damage = 650;
                 jab.height = AttackHeight::HIGH;
+                jab.type = AttackType::PUNCH_LEFT;
                 jab.startupFrames = 10;
                 jab.activeFrames = 3;
                 jab.recoveryFrames = 11;
@@ -663,6 +745,7 @@ void Fighter::Update(float deltaTime, int /*currentFrame*/, unsigned int inputBi
                 cross.radius = 0.38f;
                 cross.damage = 1020;
                 cross.height = AttackHeight::MID;
+                cross.type = AttackType::PUNCH_RIGHT;
                 cross.startupFrames = 12;
                 cross.activeFrames = 4;
                 cross.recoveryFrames = 14;
@@ -678,6 +761,7 @@ void Fighter::Update(float deltaTime, int /*currentFrame*/, unsigned int inputBi
                 kick.radius = 0.40f;
                 kick.damage = 1200;
                 kick.height = AttackHeight::MID;
+                kick.type = AttackType::KICK_LEFT;
                 kick.startupFrames = 14;
                 kick.activeFrames = 4;
                 kick.recoveryFrames = 18;
@@ -693,6 +777,7 @@ void Fighter::Update(float deltaTime, int /*currentFrame*/, unsigned int inputBi
                 rrk.radius = 0.42f;
                 rrk.damage = 1500;
                 rrk.height = AttackHeight::HIGH;
+                rrk.type = AttackType::KICK_RIGHT;
                 rrk.startupFrames = 15;
                 rrk.activeFrames = 5;
                 rrk.recoveryFrames = 22;
@@ -715,6 +800,7 @@ void Fighter::Update(float deltaTime, int /*currentFrame*/, unsigned int inputBi
                 rage.radius = 0.60f;
                 rage.damage = IsInRage() ? 3400 : 1550;
                 rage.height = AttackHeight::MID;
+                rage.type = AttackType::RAGE_ART;
                 rage.startupFrames = 20;
                 rage.activeFrames = 6;
                 rage.recoveryFrames = 40;
@@ -724,6 +810,24 @@ void Fighter::Update(float deltaTime, int /*currentFrame*/, unsigned int inputBi
                 rage.isLauncher = true;
                 rage.causesSplat = true;
                 ExecuteMove(rage);
+            } else if ((inputBits & BTN_THROW) || ((inputBits & BTN_LP) && (inputBits & BTN_LK))) {
+                // Throw: Kangaroo Pouch Slam / Fisherman Suplex (1+3)
+                Hitbox3D pouchSlam{};
+                pouchSlam.moveName = "KANGAROO POUCH SLAM (THROW)";
+                pouchSlam.offset = Vector3{0.70f, 1.30f, 0.0f};
+                pouchSlam.radius = 0.50f;
+                pouchSlam.damage = 1550;
+                pouchSlam.height = AttackHeight::HIGH;
+                pouchSlam.type = AttackType::THROW_SLAM;
+                pouchSlam.startupFrames = 12;
+                pouchSlam.activeFrames = 4;
+                pouchSlam.recoveryFrames = 20;
+                pouchSlam.hitAdvantage = 15;
+                pouchSlam.blockAdvantage = -4;
+                pouchSlam.knockback = Vector3{isFacingRight ? 7.5f : -7.5f, 1.5f, 0.0f};
+                pouchSlam.isLauncher = false;
+                pouchSlam.causesSplat = true;
+                ExecuteMove(pouchSlam);
             } else if ((inputBits & BTN_LP) && (inputBits & BTN_RP)) {
                 // 1+2: Nuclear Mach Punch (Bryan Fury f,f+2)
                 Hitbox3D machPunch{};
@@ -732,6 +836,7 @@ void Fighter::Update(float deltaTime, int /*currentFrame*/, unsigned int inputBi
                 machPunch.radius = 0.50f;
                 machPunch.damage = 1700; // Massive damage!
                 machPunch.height = AttackHeight::HIGH;
+                machPunch.type = AttackType::DUAL_STRIKE;
                 machPunch.startupFrames = 15;
                 machPunch.activeFrames = 4;
                 machPunch.recoveryFrames = 19;
@@ -750,6 +855,7 @@ void Fighter::Update(float deltaTime, int /*currentFrame*/, unsigned int inputBi
                 dropkick.radius = 0.55f;
                 dropkick.damage = 1600;
                 dropkick.height = AttackHeight::MID;
+                dropkick.type = AttackType::FLYING_DIVE_DROPKICK;
                 dropkick.startupFrames = 17;
                 dropkick.activeFrames = 6;
                 dropkick.recoveryFrames = 24;
@@ -769,6 +875,7 @@ void Fighter::Update(float deltaTime, int /*currentFrame*/, unsigned int inputBi
                 jetUpper.radius = 0.46f;
                 jetUpper.damage = 1700;
                 jetUpper.height = AttackHeight::MID;
+                jetUpper.type = AttackType::UPPERCUT_LAUNCHER;
                 jetUpper.startupFrames = 14; // Ultra fast i14 launcher!
                 jetUpper.activeFrames = 4;
                 jetUpper.recoveryFrames = 22;
@@ -786,6 +893,7 @@ void Fighter::Update(float deltaTime, int /*currentFrame*/, unsigned int inputBi
                 snakeEdge.radius = 0.44f;
                 snakeEdge.damage = 1350;
                 snakeEdge.height = AttackHeight::LOW;
+                snakeEdge.type = AttackType::LOW_SWEEP;
                 snakeEdge.startupFrames = 20; // Slower sweeping low
                 snakeEdge.activeFrames = 5;
                 snakeEdge.recoveryFrames = 26;
@@ -803,6 +911,7 @@ void Fighter::Update(float deltaTime, int /*currentFrame*/, unsigned int inputBi
                 hook.radius = 0.35f;
                 hook.damage = 680;
                 hook.height = AttackHeight::HIGH;
+                hook.type = AttackType::PUNCH_LEFT;
                 hook.startupFrames = 10;
                 hook.activeFrames = 3;
                 hook.recoveryFrames = 11;
@@ -818,6 +927,7 @@ void Fighter::Update(float deltaTime, int /*currentFrame*/, unsigned int inputBi
                 bodyBlow.radius = 0.38f;
                 bodyBlow.damage = 1050;
                 bodyBlow.height = AttackHeight::MID;
+                bodyBlow.type = AttackType::PUNCH_RIGHT;
                 bodyBlow.startupFrames = 12;
                 bodyBlow.activeFrames = 4;
                 bodyBlow.recoveryFrames = 14;
@@ -833,6 +943,7 @@ void Fighter::Update(float deltaTime, int /*currentFrame*/, unsigned int inputBi
                 kick.radius = 0.38f;
                 kick.damage = 950;
                 kick.height = AttackHeight::LOW;
+                kick.type = AttackType::KICK_LEFT;
                 kick.startupFrames = 13;
                 kick.activeFrames = 3;
                 kick.recoveryFrames = 16;
@@ -848,6 +959,7 @@ void Fighter::Update(float deltaTime, int /*currentFrame*/, unsigned int inputBi
                 knee.radius = 0.44f;
                 knee.damage = 1480;
                 knee.height = AttackHeight::MID;
+                knee.type = AttackType::KICK_RIGHT;
                 knee.startupFrames = 15;
                 knee.activeFrames = 4;
                 knee.recoveryFrames = 20;
@@ -924,8 +1036,9 @@ void Fighter::TriggerWallSplat() {
 }
 
 void Fighter::DrawProcedural3DMannequin() {
-    float crouchY = (m_stance == StanceState::CROUCH) ? -0.4f : 0.0f;
-    float breathe = std::sin(m_animTime * 4.0f) * 0.03f;
+    float crouchY = (m_stance == StanceState::CROUCH) ? -0.42f : 0.0f;
+    float breathe = std::sin(m_animTime * 4.0f) * 0.025f;
+    float bounce = (m_actionState == ActionState::IDLE) ? std::abs(std::sin(m_animTime * 6.0f)) * 0.035f : 0.0f;
     Vector3 root = Vector3{m_position.x, m_position.y + crouchY, m_position.z};
 
     float rad = -m_yaw * DEG2RAD;
@@ -940,8 +1053,20 @@ void Fighter::DrawProcedural3DMannequin() {
         skinColor = ColorLerp(m_themeColor, Color{239, 68, 68, 255}, 0.5f + auraPulse * 0.4f);
     }
 
+    // Motion parameters
+    float t = (m_actionState == ActionState::ATTACKING) ? m_limbExtension : 0.0f;
+    float snapT = t * t * (3.0f - 2.0f * t); // Smoothstep easing for crisp martial arts strikes
+    AttackType atkType = (m_actionState == ActionState::ATTACKING) ? m_currentAttack.type : AttackType::NONE;
+
     // 1. Pelvis / Hips
-    Vector3 pelvis = Vector3Add(root, Vector3{0.0f, 0.95f + breathe, 0.0f});
+    Vector3 pelvis = Vector3Add(root, Vector3{0.0f, 0.95f + breathe + bounce, 0.0f});
+    if (atkType == AttackType::LOW_SWEEP) {
+        pelvis.y -= 0.38f * snapT;
+    } else if (atkType == AttackType::FLYING_DIVE_DROPKICK) {
+        pelvis = Vector3Add(pelvis, Vector3Add(Vector3Scale(fwd, 0.35f * snapT), Vector3{0.0f, 0.15f * snapT, 0.0f}));
+    } else if (atkType == AttackType::UPPERCUT_LAUNCHER) {
+        pelvis.y += 0.15f * snapT;
+    }
     ::DrawSphere(pelvis, 0.22f, jointColor);
 
     // Belts & Sashes
@@ -969,8 +1094,22 @@ void Fighter::DrawProcedural3DMannequin() {
         ::DrawCylinderEx(tailMid, tailTip, 0.07f, 0.03f, 6, Color{130, 80, 50, 255});
     }
 
-    // 2. Torso / Chest
+    // 2. Torso / Chest (Articulates dynamically with strikes)
     Vector3 chest = Vector3Add(pelvis, Vector3{0.0f, 0.45f, 0.0f});
+    if (atkType == AttackType::DUAL_STRIKE) {
+        chest = Vector3Add(chest, Vector3Scale(fwd, 0.32f * snapT));
+    } else if (atkType == AttackType::FLYING_DIVE_DROPKICK) {
+        chest = Vector3Add(chest, Vector3Add(Vector3Scale(fwd, 0.45f * snapT), Vector3{0.0f, -0.20f * snapT, 0.0f}));
+    } else if (atkType == AttackType::UPPERCUT_LAUNCHER) {
+        chest = Vector3Add(chest, Vector3Add(Vector3Scale(fwd, 0.15f * snapT), Vector3{0.0f, 0.20f * snapT, 0.0f}));
+    } else if (atkType == AttackType::LOW_SWEEP) {
+        chest = Vector3Add(chest, Vector3{0.0f, -0.25f * snapT, 0.0f});
+    } else if (m_actionState == ActionState::HIT_STUN) {
+        chest = Vector3Add(chest, Vector3Scale(fwd, -0.22f));
+    } else if (m_actionState == ActionState::JUGGLED) {
+        chest = Vector3Add(chest, Vector3Scale(fwd, -0.35f));
+    }
+
     ::DrawCube(chest, 0.42f, 0.45f, 0.26f, skinColor);
     ::DrawCubeWires(chest, 0.42f, 0.45f, 0.26f, jointColor);
 
@@ -1013,13 +1152,60 @@ void Fighter::DrawProcedural3DMannequin() {
         ::DrawCube(fringe, 0.08f, 0.10f, 0.20f, Color{20, 20, 25, 255});
     }
 
-    // 4. Arms & Fists
-    float punchReach = (m_actionState == ActionState::ATTACKING) ? m_limbExtension * 0.75f : 0.0f;
+    // 4. Arms & Fists (ELBOW JOINTS & DYNAMIC PUNCH ARTICULATION)
     Vector3 lShoulder = Vector3Add(chest, Vector3Add(Vector3Scale(rgt, -0.28f), Vector3{0.0f, 0.15f, 0.0f}));
     Vector3 rShoulder = Vector3Add(chest, Vector3Add(Vector3Scale(rgt, 0.28f), Vector3{0.0f, 0.15f, 0.0f}));
 
-    Vector3 lFist = Vector3Add(lShoulder, Vector3Add(Vector3Scale(fwd, 0.45f + punchReach), Vector3{0.0f, -0.05f, 0.0f}));
-    Vector3 rFist = Vector3Add(rShoulder, Vector3Add(Vector3Scale(fwd, 0.35f + (punchReach * 0.5f)), Vector3{0.0f, -0.10f, 0.0f}));
+    // Default Tekken high combat guard:
+    Vector3 lFist = Vector3Add(lShoulder, Vector3Add(Vector3Scale(fwd, 0.40f), Vector3{0.0f, 0.02f, 0.0f}));
+    Vector3 rFist = Vector3Add(rShoulder, Vector3Add(Vector3Scale(fwd, 0.30f), Vector3{0.0f, -0.04f, 0.0f}));
+
+    // Attack / Stance Articulation for Arms:
+    if (atkType == AttackType::PUNCH_LEFT) {
+        // 1: Left Flash Jab / Lead Hook
+        lFist = Vector3Add(lShoulder, Vector3Add(Vector3Scale(fwd, 0.40f + 0.68f * snapT), Vector3{0.0f, 0.05f * snapT, 0.0f}));
+        rFist = Vector3Add(rShoulder, Vector3Add(Vector3Scale(fwd, 0.26f), Vector3{0.0f, 0.05f, 0.0f})); // guards chin
+    } else if (atkType == AttackType::PUNCH_RIGHT) {
+        // 2: Right Power Straight / Cross / Body Blow
+        rFist = Vector3Add(rShoulder, Vector3Add(Vector3Scale(fwd, 0.30f + 0.88f * snapT), Vector3{0.0f, -0.04f * snapT, 0.0f}));
+        lFist = Vector3Add(lShoulder, Vector3Add(Vector3Scale(fwd, 0.28f), Vector3{0.0f, 0.06f, 0.0f})); // guards face
+    } else if (atkType == AttackType::UPPERCUT_LAUNCHER) {
+        // Down+2: Electric Wind God Fist / Jet Upper / Rising Elbow Launcher!
+        // Right arm explodes straight UPWARD toward the sky!
+        rFist = Vector3Add(rShoulder, Vector3Add(Vector3Scale(fwd, 0.35f * snapT), Vector3{0.0f, 0.95f * snapT, 0.0f}));
+        lFist = Vector3Add(lShoulder, Vector3Add(Vector3Scale(fwd, 0.25f), Vector3{0.0f, -0.15f * snapT, 0.0f}));
+    } else if (atkType == AttackType::DUAL_STRIKE) {
+        // 1+2: Demon Breath Palm / Nuclear Mach Punch / Tetsuzanko
+        lFist = Vector3Add(lShoulder, Vector3Add(Vector3Scale(fwd, 0.40f + 0.72f * snapT), Vector3{0.0f, 0.0f, 0.0f}));
+        rFist = Vector3Add(rShoulder, Vector3Add(Vector3Scale(fwd, 0.30f + 0.82f * snapT), Vector3{0.0f, 0.0f, 0.0f}));
+    } else if (atkType == AttackType::THROW_SLAM) {
+        // Throw Grab
+        lFist = Vector3Add(lShoulder, Vector3Add(Vector3Scale(fwd, 0.55f * snapT), Vector3{0.0f, 0.10f, 0.0f}));
+        rFist = Vector3Add(rShoulder, Vector3Add(Vector3Scale(fwd, 0.55f * snapT), Vector3{0.0f, 0.10f, 0.0f}));
+    } else if (atkType == AttackType::RAGE_ART) {
+        // Rage Art Cinematic Strike Flurry
+        float flurry = std::sin(m_animTime * 24.0f) * 0.4f;
+        lFist = Vector3Add(lShoulder, Vector3Add(Vector3Scale(fwd, 0.40f + 0.70f * (snapT + flurry)), Vector3{0.0f, 0.0f, 0.0f}));
+        rFist = Vector3Add(rShoulder, Vector3Add(Vector3Scale(fwd, 0.30f + 0.70f * (snapT - flurry)), Vector3{0.0f, 0.0f, 0.0f}));
+    } else if (IsBlocking()) {
+        // Tekken Guard: crossed forearms protecting head & ribs!
+        lFist = Vector3Add(chest, Vector3Add(Vector3Scale(fwd, 0.24f), Vector3Add(Vector3Scale(rgt, 0.06f), Vector3{0.0f, 0.20f, 0.0f})));
+        rFist = Vector3Add(chest, Vector3Add(Vector3Scale(fwd, 0.22f), Vector3Add(Vector3Scale(rgt, -0.06f), Vector3{0.0f, 0.18f, 0.0f})));
+    } else if (m_actionState == ActionState::HIT_STUN || m_actionState == ActionState::JUGGLED) {
+        // Flinching back
+        lFist = Vector3Add(lShoulder, Vector3Add(Vector3Scale(fwd, -0.15f), Vector3{0.0f, 0.15f, 0.0f}));
+        rFist = Vector3Add(rShoulder, Vector3Add(Vector3Scale(fwd, -0.15f), Vector3{0.0f, 0.15f, 0.0f}));
+    }
+
+    // Articulated Elbow joints:
+    Vector3 lElbow = Vector3Lerp(lShoulder, lFist, 0.5f);
+    Vector3 rElbow = Vector3Lerp(rShoulder, rFist, 0.5f);
+    if (atkType == AttackType::UPPERCUT_LAUNCHER) {
+        rElbow = Vector3Add(rElbow, Vector3Add(Vector3Scale(fwd, 0.20f), Vector3{0.0f, 0.40f * snapT, 0.0f}));
+    } else {
+        lElbow = Vector3Add(lElbow, Vector3Add(Vector3Scale(rgt, -0.14f), Vector3{0.0f, -0.10f, 0.0f}));
+        rElbow = Vector3Add(rElbow, Vector3Add(Vector3Scale(rgt, 0.14f), Vector3{0.0f, -0.10f, 0.0f}));
+    }
 
     Color gloveColor = skinColor;
     if (m_characterId == 3) {
@@ -1028,42 +1214,121 @@ void Fighter::DrawProcedural3DMannequin() {
         gloveColor = Color{185, 28, 28, 255}; // Jin's crimson gauntlets
     }
 
-    ::DrawCylinderEx(lShoulder, lFist, 0.08f, 0.07f, 6, jointColor);
+    // DRAW ARTICULATED ARMS (BICEPS, ELBOWS, FOREARMS & FISTS):
+    // Left arm
+    ::DrawCylinderEx(lShoulder, lElbow, 0.08f, 0.07f, 6, jointColor);
+    ::DrawSphere(lElbow, 0.075f, jointColor);
+    ::DrawCylinderEx(lElbow, lFist, 0.07f, 0.065f, 6, jointColor);
     ::DrawSphere(lFist, (m_characterId == 3) ? 0.16f : 0.12f, gloveColor);
 
-    ::DrawCylinderEx(rShoulder, rFist, 0.08f, 0.07f, 6, jointColor);
+    // Right arm
+    ::DrawCylinderEx(rShoulder, rElbow, 0.08f, 0.07f, 6, jointColor);
+    ::DrawSphere(rElbow, 0.075f, jointColor);
+    ::DrawCylinderEx(rElbow, rFist, 0.07f, 0.065f, 6, jointColor);
     ::DrawSphere(rFist, (m_characterId == 3) ? 0.16f : 0.12f, gloveColor);
 
-    // Fist Elemental Auras
-    if (m_characterId == 0) {
-        // Golden lightning sparks around fists
-        float sparkOsc = std::sin(m_animTime * 15.0f) * 0.08f;
-        ::DrawCube(Vector3Add(lFist, Vector3{sparkOsc, 0.05f, 0.0f}), 0.05f, 0.05f, 0.05f, Color{250, 204, 21, 230});
-        ::DrawCube(Vector3Add(rFist, Vector3{-sparkOsc, 0.05f, 0.0f}), 0.05f, 0.05f, 0.05f, Color{250, 204, 21, 230});
-    } else if (m_characterId == 2) {
-        // Red devil omen sparks
-        float sparkOsc = std::cos(m_animTime * 14.0f) * 0.07f;
-        ::DrawCube(Vector3Add(lFist, Vector3{0.0f, sparkOsc, 0.0f}), 0.05f, 0.05f, 0.05f, Color{239, 68, 68, 230});
-        ::DrawCube(Vector3Add(rFist, Vector3{0.0f, -sparkOsc, 0.0f}), 0.05f, 0.05f, 0.05f, Color{239, 68, 68, 230});
-    }
-
-    // 5. Legs & Feet
+    // 5. Legs & Feet (KNEE JOINTS & DYNAMIC KICK ARTICULATION)
     Vector3 lHip = Vector3Add(pelvis, Vector3Scale(rgt, -0.16f));
     Vector3 rHip = Vector3Add(pelvis, Vector3Scale(rgt, 0.16f));
 
-    Vector3 lFoot = Vector3Add(root, Vector3Add(Vector3Scale(rgt, -0.22f), Vector3Scale(fwd, 0.15f)));
-    Vector3 rFoot = Vector3Add(root, Vector3Add(Vector3Scale(rgt, 0.22f), Vector3Scale(fwd, -0.15f)));
+    // Stride walk cycle
+    float walkCycle = 0.0f;
+    float walkLiftL = 0.0f;
+    float walkLiftR = 0.0f;
+    if (m_actionState == ActionState::WALK_FORWARD || m_actionState == ActionState::WALK_BACK) {
+        walkCycle = std::sin(m_animTime * 9.0f);
+        if (walkCycle > 0.0f) walkLiftL = walkCycle * 0.14f;
+        else walkLiftR = -walkCycle * 0.14f;
+    }
 
-    ::DrawCylinderEx(lHip, lFoot, 0.10f, 0.08f, 6, jointColor);
-    ::DrawCube(lFoot, 0.14f, 0.10f, 0.26f, skinColor);
+    Vector3 lFoot = Vector3Add(root, Vector3Add(Vector3Scale(rgt, -0.22f), Vector3Scale(fwd, 0.16f + walkCycle * 0.26f)));
+    Vector3 rFoot = Vector3Add(root, Vector3Add(Vector3Scale(rgt, 0.22f), Vector3Scale(fwd, -0.16f - walkCycle * 0.26f)));
+    lFoot.y += walkLiftL;
+    rFoot.y += walkLiftR;
 
-    ::DrawCylinderEx(rHip, rFoot, 0.10f, 0.08f, 6, jointColor);
-    ::DrawCube(rFoot, 0.14f, 0.10f, 0.26f, skinColor);
+    Vector3 lKnee = Vector3Lerp(lHip, lFoot, 0.5f);
+    Vector3 rKnee = Vector3Lerp(rHip, rFoot, 0.5f);
+    lKnee = Vector3Add(lKnee, Vector3Scale(fwd, 0.10f));
+    rKnee = Vector3Add(rKnee, Vector3Scale(fwd, 0.08f));
+
+    // Dynamic Attack Articulation for Legs:
+    if (atkType == AttackType::KICK_LEFT) {
+        // 3: Left Snap Kick / Mid Round Kick / Low Shin Check
+        float kickH = (m_currentAttack.height == AttackHeight::LOW) ? 0.22f : 1.15f;
+        lKnee = Vector3Add(lHip, Vector3Add(Vector3Scale(fwd, 0.52f * snapT), Vector3{0.0f, 0.38f * snapT, 0.0f}));
+        lFoot = Vector3Add(root, Vector3Add(Vector3Scale(fwd, 0.98f * snapT), Vector3{0.0f, kickH * snapT, 0.0f}));
+        lFoot = Vector3Add(lFoot, Vector3Scale(rgt, -0.08f));
+        rKnee = Vector3Add(rKnee, Vector3Scale(fwd, 0.05f));
+    } else if (atkType == AttackType::KICK_RIGHT) {
+        // 4: Right Roundhouse Kick / Brutal Knee Smash
+        if (m_characterId == 3) {
+            // Ganja Knee Smash: Right knee drives violently upward!
+            rKnee = Vector3Add(rHip, Vector3Add(Vector3Scale(fwd, 0.75f * snapT), Vector3{0.0f, 0.48f * snapT, 0.0f}));
+            rFoot = Vector3Add(rKnee, Vector3Add(Vector3Scale(fwd, -0.08f), Vector3{0.0f, -0.32f, 0.0f}));
+        } else {
+            // High Roundhouse Whip Kick to head height!
+            rKnee = Vector3Add(rHip, Vector3Add(Vector3Scale(fwd, 0.45f * snapT), Vector3Add(Vector3Scale(rgt, 0.22f * snapT), Vector3{0.0f, 0.45f * snapT, 0.0f})));
+            rFoot = Vector3Add(root, Vector3Add(Vector3Scale(fwd, 0.94f * snapT), Vector3{0.0f, 1.50f * snapT, 0.0f}));
+            rFoot = Vector3Add(rFoot, Vector3Scale(rgt, 0.10f));
+        }
+    } else if (atkType == AttackType::LOW_SWEEP) {
+        // d+3: Hell Sweep / Snake Edge / Dragon Low Sweep
+        // Leg sweeps low across the floor in a wide arc!
+        float sweepAngle = snapT * 3.14159f;
+        lFoot = Vector3Add(root, Vector3Add(Vector3Scale(rgt, -0.28f), Vector3Scale(fwd, -0.15f)));
+        lKnee = Vector3Lerp(lHip, lFoot, 0.5f);
+        rKnee = Vector3Add(rHip, Vector3Add(Vector3Scale(fwd, 0.50f * snapT), Vector3{0.0f, -0.35f * snapT, 0.0f}));
+        rFoot = Vector3Add(root, Vector3Add(Vector3Scale(fwd, 1.05f * std::sin(sweepAngle)), Vector3Add(Vector3Scale(rgt, 0.45f * std::cos(sweepAngle)), Vector3{0.0f, 0.08f, 0.0f})));
+    } else if (atkType == AttackType::FLYING_DIVE_DROPKICK) {
+        // 3+4: Raiden Electric Torpedo Dive / Kangaroo Double Dropkick / Can-Can Kicks
+        if (m_characterId == 2) {
+            // Can-Can double rising kicks (Jin)
+            lKnee = Vector3Add(lHip, Vector3Add(Vector3Scale(fwd, 0.45f * snapT), Vector3{0.0f, 0.48f * snapT, 0.0f}));
+            rKnee = Vector3Add(rHip, Vector3Add(Vector3Scale(fwd, 0.55f * snapT), Vector3{0.0f, 0.58f * snapT, 0.0f}));
+            lFoot = Vector3Add(root, Vector3Add(Vector3Scale(fwd, 0.75f * snapT), Vector3{0.0f, 1.30f * snapT, 0.0f}));
+            rFoot = Vector3Add(root, Vector3Add(Vector3Scale(fwd, 0.95f * snapT), Vector3{0.0f, 1.65f * snapT, 0.0f}));
+        } else {
+            // Horizontal flying dive: both legs shoot straight forward!
+            lKnee = Vector3Add(lHip, Vector3Add(Vector3Scale(fwd, 0.55f * snapT), Vector3{0.0f, 0.12f * snapT, 0.0f}));
+            rKnee = Vector3Add(rHip, Vector3Add(Vector3Scale(fwd, 0.55f * snapT), Vector3{0.0f, 0.12f * snapT, 0.0f}));
+            lFoot = Vector3Add(pelvis, Vector3Add(Vector3Scale(fwd, 1.05f * snapT), Vector3Add(Vector3Scale(rgt, -0.12f), Vector3{0.0f, 0.08f * snapT, 0.0f})));
+            rFoot = Vector3Add(pelvis, Vector3Add(Vector3Scale(fwd, 1.05f * snapT), Vector3Add(Vector3Scale(rgt, 0.12f), Vector3{0.0f, 0.08f * snapT, 0.0f})));
+        }
+    }
+
+    // DRAW ARTICULATED LEGS (THIGHS, KNEES, SHINS & FEET):
+    // Left leg
+    ::DrawCylinderEx(lHip, lKnee, 0.11f, 0.09f, 8, jointColor);
+    ::DrawSphere(lKnee, 0.095f, jointColor);
+    ::DrawCylinderEx(lKnee, lFoot, 0.09f, 0.075f, 8, jointColor);
+    ::DrawCube(lFoot, 0.14f, 0.10f, 0.28f, skinColor);
+
+    // Right leg
+    ::DrawCylinderEx(rHip, rKnee, 0.11f, 0.09f, 8, jointColor);
+    ::DrawSphere(rKnee, 0.095f, jointColor);
+    ::DrawCylinderEx(rKnee, rFoot, 0.09f, 0.075f, 8, jointColor);
+    ::DrawCube(rFoot, 0.14f, 0.10f, 0.28f, skinColor);
 
     // WINPAK: Crimson flame stripe on right leg
     if (m_characterId == 2) {
         Vector3 flameLeg = Vector3Lerp(rHip, rFoot, 0.5f);
         ::DrawCube(flameLeg, 0.14f, 0.25f, 0.12f, Color{225, 29, 72, 240});
+    }
+
+    // Elemental Strike FX:
+    if (m_actionState == ActionState::ATTACKING) {
+        if (m_characterId == 0) {
+            // Mishima / Raiden Thunder lightning sparks
+            float sparkOsc = std::sin(m_animTime * 25.0f) * 0.12f;
+            Vector3 sparkPos = (atkType == AttackType::KICK_LEFT || atkType == AttackType::KICK_RIGHT || atkType == AttackType::LOW_SWEEP) ? rFoot : rFist;
+            ::DrawSphere(Vector3Add(sparkPos, Vector3{sparkOsc, 0.05f, 0.0f}), 0.10f, Color{250, 204, 21, 230});
+            ::DrawLine3D(sparkPos, Vector3Add(sparkPos, Vector3{sparkOsc * 2.0f, 0.25f, -sparkOsc}), Color{255, 240, 100, 255});
+        } else if (m_characterId == 2) {
+            // Jin Devil Red lightning
+            float sparkOsc = std::cos(m_animTime * 24.0f) * 0.10f;
+            Vector3 sparkPos = (atkType == AttackType::KICK_LEFT || atkType == AttackType::KICK_RIGHT || atkType == AttackType::FLYING_DIVE_DROPKICK) ? rFoot : rFist;
+            ::DrawSphere(Vector3Add(sparkPos, Vector3{0.0f, sparkOsc, 0.0f}), 0.10f, Color{239, 68, 68, 230});
+        }
     }
 
     // Dynamic Altitude-Scaled Soft Shadow

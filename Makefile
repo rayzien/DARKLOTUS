@@ -1,5 +1,5 @@
 CXX ?= g++
-CXXFLAGS = -std=c++17 -Wall -Wextra -Wno-missing-field-initializers -O2 -Iinclude -Ithird_party/raylib/include
+CXXFLAGS = -std=c++17 -Wall -Wextra -Wno-missing-field-initializers -O0 -g -Iinclude -Ithird_party/raylib/include
 LDFLAGS = third_party/raylib/lib/libraylib.a -lm -lpthread -ldl -lrt -lX11
 
 SRCS = src/main.cpp \
@@ -45,7 +45,7 @@ TEST_TARGET = bin/DarkLotusTest
 
 test: $(TARGET) $(TEST_TARGET)
 	@echo "Running DarkLotus Test Suite..."
-	./$(TEST_TARGET)
+	DISPLAY=$(DISPLAY) ./$(TEST_TARGET)
 
 $(TEST_TARGET): $(TEST_OBJS) | bin
 	$(CXX) $(TEST_OBJS) $(LDFLAGS) -o $@

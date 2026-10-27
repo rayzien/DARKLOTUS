@@ -43,6 +43,10 @@ public:
     bool IsBlocking() const;
     bool IsCrouching() const { return m_stance == StanceState::CROUCH; }
 
+    AttackType GetCurrentAttackType() const { return m_currentAttack.type; }
+    const Hitbox3D& GetCurrentAttack() const { return m_currentAttack; }
+    float GetLimbExtension() const { return m_limbExtension; }
+
     // Hitbox / Hurtbox queries
     const Hitbox3D* GetActiveHitbox() const;
     std::vector<BoundingBox> GetHurtboxes() const;

@@ -131,11 +131,17 @@ int main() {
     std::cout << "  DARKLOTUS AUTOMATED ENGINE TEST SUITE  " << std::endl;
     std::cout << "========================================" << std::endl;
 
+    ::SetTraceLogLevel(LOG_WARNING);
+    ::SetConfigFlags(FLAG_WINDOW_HIDDEN);
+    ::InitWindow(100, 100, "DarkLotusTest");
+
     TestCharacterRoster();
     TestFighterStateAndPhysics();
     TestTekkenGuardRules();
     Test3DCollisionDetection();
     TestSettingsPersistence();
+
+    ::CloseWindow();
 
     std::cout << "========================================" << std::endl;
     std::cout << "  ALL 5 TEST SUITES PASSED (100% OK)     " << std::endl;

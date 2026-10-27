@@ -53,8 +53,15 @@ public:
 
     // Gamepad detection and query
     bool IsGamepadConnected(int playerIndex = 0) const;
+    bool IsAnyGamepadConnected() const;
+    int GetPrimaryGamepadIndex() const;
     std::string GetGamepadDeviceName(int playerIndex = 0) const;
     void TriggerVibration(int playerIndex, float leftMotor, float rightMotor, float duration);
+    Vector2 GetGamepadStick(int playerIndex = 0) const;
+
+    // Two-player local mode toggle
+    void SetTwoPlayerMode(bool enable) { m_twoPlayerMode = enable; }
+    bool IsTwoPlayerMode() const { return m_twoPlayerMode; }
 
     // Controller Navigation
     bool WasGamepadButtonPressed(int playerIndex, int gamepadButton) const;
@@ -85,6 +92,8 @@ private:
     // Circular input history buffer (60 frames)
     static constexpr size_t BUFFER_SIZE = 60;
     std::vector<BufferedInput> m_inputHistory[2];
+
+    bool m_twoPlayerMode{false};
 };
 
 } // namespace DarkLotus

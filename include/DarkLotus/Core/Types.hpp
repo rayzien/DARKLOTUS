@@ -36,6 +36,21 @@ enum class AttackHeight {
     THROW
 };
 
+// Martial arts attack type categories for procedural bone articulation
+enum class AttackType {
+    NONE,
+    PUNCH_LEFT,            // 1: Left Jab / Lead Hook (Xbox X / U / Z)
+    PUNCH_RIGHT,           // 2: Right Straight / Cross / Body Blow (Xbox Y / I / X)
+    KICK_LEFT,             // 3: Left Kick / Front Snap Kick / Shin Kick (Xbox A / J / C)
+    KICK_RIGHT,            // 4: Right Kick / High Roundhouse / Knee Smash (Xbox B / K / V)
+    UPPERCUT_LAUNCHER,     // d+2: Electric Wind God Fist / Jet Upper / Rising Elbow / Thrusting Demon
+    LOW_SWEEP,             // d+3: Mishima Hell Sweep / Snake Edge / Dragon Sweep
+    DUAL_STRIKE,           // 1+2: Demon Breath Palm / Mach Punch / Tetsuzanko (Xbox RB)
+    FLYING_DIVE_DROPKICK,  // 3+4: Raiden Torpedo Dive / Kangaroo Dropkick / Can-Can Kicks (Xbox RT)
+    THROW_SLAM,            // 1+3: Command Grab / Body Slam (Xbox LT)
+    RAGE_ART               // Heat Burst / Rage Art Cinematic Finisher (Xbox LB)
+};
+
 // Fighter stance / posture states
 enum class StanceState {
     STAND,
@@ -76,6 +91,7 @@ struct Hitbox3D {
     bool active;          // Is hitbox currently active
     int damage;           // Base damage
     AttackHeight height;  // High, Mid, Low
+    AttackType type{AttackType::NONE}; // Martial arts attack motion category
     int startupFrames;    // Frames before hitbox becomes active
     int activeFrames;     // Duration hitbox stays alive
     int recoveryFrames;   // Frames to recover after attack

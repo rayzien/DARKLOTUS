@@ -29,6 +29,7 @@ public:
     // HUD & In-game displays
     void DrawCombatHUD(const Fighter* p1, const Fighter* p2, int roundTimer, int p1RoundsWon, int p2RoundsWon, int roundsToWin);
     void DrawComboCounter(int playerIndex, int hits, int totalDamage);
+    void DrawInputTelemetry(const ButtonManager* btnMgr, const Fighter* p1, const Fighter* p2);
     void TriggerCombatAnnouncement(const std::string& text, Color color, float duration = 1.2f, float scale = 2.0f);
     void DrawAnnouncements();
 

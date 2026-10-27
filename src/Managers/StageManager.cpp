@@ -4,15 +4,45 @@
 namespace DarkLotus {
 
 StageManager::StageManager() = default;
-StageManager::~StageManager() = default;
+
+StageManager::~StageManager() {
+    UnloadCurrentModel();
+}
+
+void StageManager::UnloadCurrentModel() {
+    if (m_hasCustomModel) {
+        ::UnloadModel(m_stageModel);
+        m_hasCustomModel = false;
+    }
+}
 
 void StageManager::Init() {
-    SetStage(StageType::NEON_DOJO);
+    SetStage(StageType::LOTUS_TEMPLE);
     Logger::Info("StageManager", "3D Stage and Arena boundary manager initialized.");
 }
 
 void StageManager::SetStage(StageType stageType) {
+    UnloadCurrentModel();
+
     switch (stageType) {
+        case StageType::LOTUS_TEMPLE:
+            m_currentStage = {
+                "The Lotus Temple",
+                StageType::LOTUS_TEMPLE,
+                21.0f, // 21m diameter circular fighting dais
+                21.0f,
+                true,  // Has 9 pagoda boundary lanterns for wall splat!
+                Color{8, 10, 16, 255},   // Dark obsidian floor
+                Color{245, 158, 11, 255} // Lotus Imperial Gold
+            };
+            if (::FileExists("assets/models/arenas/lotus_temple.glb")) {
+                m_stageModel = ::LoadModel("assets/models/arenas/lotus_temple.glb");
+                m_hasCustomModel = true;
+                Logger::Info("StageManager", "Loaded high-fidelity 3D Lotus Temple arena (.glb) successfully!");
+            } else {
+                Logger::Warn("StageManager", "Lotus Temple .glb not found, using procedural fallback.");
+            }
+            break;
         case StageType::NEON_DOJO:
             m_currentStage = {
                 "Neon Cyber Dojo",
@@ -54,6 +84,18 @@ void StageManager::Update(float deltaTime) {
 }
 
 void StageManager::Draw3D() {
+    // If a high-fidelity 3D arena model (.glb) is loaded, draw it directly!
+    if (m_hasCustomModel) {
+        ::DrawModel(m_stageModel, Vector3{0.0f, 0.0f, 0.0f}, 1.0f, WHITE);
+
+        // Tactical combat boundary guide circle (matches the 9 pagoda boundary lanterns)
+        float pulse = (std::sin(m_gridPulse) + 1.0f) * 0.5f;
+        Color ringCol = m_currentStage.accentColor;
+        ringCol.a = static_cast<unsigned char>(60 + pulse * 50);
+        ::DrawCircle3D(Vector3{0.0f, 0.36f, 0.0f}, 10.4f, Vector3{1.0f, 0.0f, 0.0f}, 90.0f, ringCol);
+        return;
+    }
+
     float halfW = m_currentStage.arenaWidth * 0.5f;
     float halfL = m_currentStage.arenaLength * 0.5f;
 

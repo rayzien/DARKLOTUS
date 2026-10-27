@@ -157,6 +157,123 @@ void UIManager::DrawComboCounter(int playerIndex, int hits, int totalDamage) {
     ::DrawText(dmgText.c_str(), static_cast<int>(posX + 4), static_cast<int>(posY + 36), 22, Color{240, 240, 240, 220});
 }
 
+void UIManager::DrawInputTelemetry(const ButtonManager* btnMgr, const Fighter* p1, const Fighter* /*p2*/) {
+    if (!btnMgr || !p1) return;
+
+    float sh = static_cast<float>(::GetScreenHeight());
+
+    float panelW = 390.0f;
+    float panelH = 100.0f;
+    float panelX = 20.0f;
+    float panelY = sh - panelH - 18.0f;
+
+    // Semi-transparent high-tech HUD backing
+    Rectangle panel = {panelX, panelY, panelW, panelH};
+    ::DrawRectangleRec(panel, Color{15, 18, 26, 215});
+    ::DrawRectangleLinesEx(panel, 1.5f, Color{60, 70, 90, 220});
+
+    unsigned int p1Input = btnMgr->GetPlayerInput(0);
+    bool up    = (p1Input & BTN_UP) != 0;
+    bool down  = (p1Input & BTN_DOWN) != 0;
+    bool left  = (p1Input & BTN_LEFT) != 0;
+    bool right = (p1Input & BTN_RIGHT) != 0;
+    bool lp    = (p1Input & BTN_LP) != 0;  // 1: X (Square)
+    bool rp    = (p1Input & BTN_RP) != 0;  // 2: Y (Triangle)
+    bool lk    = (p1Input & BTN_LK) != 0;  // 3: A (Cross)
+    bool rk    = (p1Input & BTN_RK) != 0;  // 4: B (Circle)
+    bool rage  = (p1Input & BTN_HEAT_RAGE) != 0; // LB
+    bool dual  = (lp && rp);                     // RB
+    bool throwBtn = (p1Input & BTN_THROW) != 0;  // LT
+    bool dualK = (lk && rk);                     // RT
+
+    // 1. Device Connection Status Title
+    std::string devName = btnMgr->GetGamepadDeviceName(0);
+    bool padActive = btnMgr->IsGamepadConnected(0);
+    std::string title = padActive ? ("🎮 XBOX CONTROLLER: " + devName) : "⌨ KEYBOARD: WASD/Arrows + U,I,J,K or Z,X,C,V";
+    Color titleCol = padActive ? Color{34, 197, 94, 255} : Color{180, 190, 205, 230};
+    ::DrawText(title.c_str(), static_cast<int>(panelX + 10), static_cast<int>(panelY + 6), 13, titleCol);
+
+    // 2. D-Pad Cluster (▲ ▼ ◄ ►)
+    float dpadCenterX = panelX + 38.0f;
+    float dpadCenterY = panelY + 54.0f;
+
+    auto drawDpadDir = [](float x, float y, bool active, const char* label) {
+        Rectangle r = {x - 8, y - 8, 16, 16};
+        ::DrawRectangleRec(r, active ? Color{34, 197, 94, 255} : Color{35, 40, 52, 200});
+        ::DrawRectangleLinesEx(r, 1.0f, active ? Color{250, 204, 21, 255} : Color{70, 75, 90, 200});
+        ::DrawText(label, static_cast<int>(x - 4), static_cast<int>(y - 5), 11, active ? Color{10, 15, 20, 255} : Color{160, 170, 185, 220});
+    };
+
+    drawDpadDir(dpadCenterX, dpadCenterY - 18.0f, up, "U");
+    drawDpadDir(dpadCenterX, dpadCenterY + 18.0f, down, "D");
+    drawDpadDir(dpadCenterX - 18.0f, dpadCenterY, left, "L");
+    drawDpadDir(dpadCenterX + 18.0f, dpadCenterY, right, "R");
+
+    // 3. Left Analog Stick Indicator
+    float stickBaseX = panelX + 90.0f;
+    float stickBaseY = dpadCenterY;
+    ::DrawCircle(static_cast<int>(stickBaseX), static_cast<int>(stickBaseY), 16.0f, Color{25, 30, 42, 230});
+    ::DrawCircleLines(static_cast<int>(stickBaseX), static_cast<int>(stickBaseY), 16.0f, Color{70, 80, 100, 220});
+    Vector2 stick = btnMgr->GetGamepadStick(0);
+    float dotX = stickBaseX + (stick.x * 10.0f);
+    float dotY = stickBaseY + (stick.y * 10.0f);
+    ::DrawCircle(static_cast<int>(dotX), static_cast<int>(dotY), 6.0f, (std::abs(stick.x) > 0.3f || std::abs(stick.y) > 0.3f) ? Color{250, 204, 21, 255} : Color{100, 110, 130, 240});
+
+    // 4. Face Buttons (X, Y, A, B in authentic Xbox colors)
+    float faceCenterX = panelX + 165.0f;
+    float faceCenterY = dpadCenterY;
+
+    auto drawFaceBtn = [](float x, float y, bool active, Color col, const char* label, const char* tekkenNum) {
+        ::DrawCircle(static_cast<int>(x), static_cast<int>(y), 11.0f, active ? col : Color{30, 35, 48, 220});
+        ::DrawCircleLines(static_cast<int>(x), static_cast<int>(y), 11.0f, active ? Color{255, 255, 255, 255} : col);
+        ::DrawText(label, static_cast<int>(x - 4), static_cast<int>(y - 6), 12, active ? Color{10, 15, 20, 255} : col);
+        ::DrawText(tekkenNum, static_cast<int>(x - 3), static_cast<int>(y + 12), 10, Color{160, 170, 185, 200});
+    };
+
+    // X (Blue / 1: LP)
+    drawFaceBtn(faceCenterX - 18.0f, faceCenterY, lp, Color{59, 130, 246, 255}, "X", "1");
+    // Y (Yellow / 2: RP)
+    drawFaceBtn(faceCenterX, faceCenterY - 18.0f, rp, Color{234, 179, 8, 255}, "Y", "2");
+    // A (Green / 3: LK)
+    drawFaceBtn(faceCenterX, faceCenterY + 18.0f, lk, Color{34, 197, 94, 255}, "A", "3");
+    // B (Red / 4: RK)
+    drawFaceBtn(faceCenterX + 18.0f, faceCenterY, rk, Color{239, 68, 68, 255}, "B", "4");
+
+    // 5. Bumpers & Triggers (LB, RB, LT, RT)
+    auto drawShoulder = [](float x, float y, float w, float h, bool active, Color col, const char* label) {
+        Rectangle r = {x, y, w, h};
+        ::DrawRectangleRec(r, active ? col : Color{30, 35, 48, 220});
+        ::DrawRectangleLinesEx(r, 1.0f, active ? Color{255, 255, 255, 255} : Color{70, 80, 100, 200});
+        ::DrawText(label, static_cast<int>(x + 4), static_cast<int>(y + 2), 11, active ? Color{10, 15, 20, 255} : col);
+    };
+
+    float shX = panelX + 215.0f;
+    drawShoulder(shX, panelY + 28.0f, 34.0f, 18.0f, rage, Color{168, 85, 247, 255}, "LB");
+    drawShoulder(shX + 40.0f, panelY + 28.0f, 34.0f, 18.0f, dual, Color{249, 115, 22, 255}, "RB");
+    drawShoulder(shX, panelY + 54.0f, 34.0f, 18.0f, throwBtn, Color{20, 184, 166, 255}, "LT");
+    drawShoulder(shX + 40.0f, panelY + 54.0f, 34.0f, 18.0f, dualK, Color{244, 63, 94, 255}, "RT");
+
+    // 6. Active Move Telemetry Badge
+    float infoX = panelX + 296.0f;
+    float infoY = panelY + 26.0f;
+    if (p1->IsAttacking()) {
+        const auto& atk = p1->GetCurrentAttack();
+        const char* hLabel = (atk.height == AttackHeight::HIGH) ? "HIGH" : (atk.height == AttackHeight::MID ? "MID" : "LOW");
+        Color hCol = (atk.height == AttackHeight::HIGH) ? Color{250, 204, 21, 255} : (atk.height == AttackHeight::MID) ? Color{59, 130, 246, 255} : Color{239, 68, 68, 255};
+
+        ::DrawText("STRIKE EXECUTED:", static_cast<int>(infoX), static_cast<int>(infoY), 10, Color{250, 204, 21, 255});
+        ::DrawText(atk.moveName.c_str(), static_cast<int>(infoX), static_cast<int>(infoY + 12), 11, Color{255, 255, 255, 255});
+        ::DrawText(TextFormat("[%s] DMG: %d", hLabel, atk.damage), static_cast<int>(infoX), static_cast<int>(infoY + 26), 11, hCol);
+    } else if (p1->IsBlocking()) {
+        ::DrawText("SHIELD / GUARD:", static_cast<int>(infoX), static_cast<int>(infoY), 10, Color{56, 189, 248, 255});
+        ::DrawText(p1->IsCrouching() ? "CROUCH GUARD (LOW)" : "HIGH/MID GUARD", static_cast<int>(infoX), static_cast<int>(infoY + 14), 11, Color{56, 189, 248, 255});
+    } else {
+        ::DrawText("FIGHTER STATE:", static_cast<int>(infoX), static_cast<int>(infoY), 10, Color{160, 170, 185, 200});
+        ::DrawText("COMBAT READY", static_cast<int>(infoX), static_cast<int>(infoY + 14), 11, Color{34, 197, 94, 230});
+        ::DrawText("WASD/Arrows + X,Y,A,B", static_cast<int>(infoX), static_cast<int>(infoY + 28), 9, Color{140, 150, 165, 180});
+    }
+}
+
 void UIManager::DrawAnnouncements() {
     for (const auto& popup : m_popups) {
         float alpha = popup.lifeTime / popup.maxLifeTime;

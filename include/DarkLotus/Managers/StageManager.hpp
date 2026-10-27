@@ -5,6 +5,7 @@
 namespace DarkLotus {
 
 enum class StageType {
+    LOTUS_TEMPLE,
     NEON_DOJO,
     MISHIMA_SANCTUARY,
     INFINITE_VOID
@@ -37,8 +38,13 @@ public:
     float GetArenaLength() const { return m_currentStage.arenaLength; }
 
 private:
+    void UnloadCurrentModel();
+
     StageInfo m_currentStage;
     float m_gridPulse{0.0f};
+
+    Model m_stageModel{};
+    bool m_hasCustomModel{false};
 };
 
 } // namespace DarkLotus
